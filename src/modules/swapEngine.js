@@ -65,11 +65,19 @@ class SwapEngine extends EventEmitter {
 
       const PREFIX_MAPPINGS = [
         { prefix: 'album_anthem_', category: 'Anthems' },
+        { prefix: 'anthem_', category: 'Anthems' },
         { prefix: 'antenna_', category: 'Antennas' },
+        { prefix: 'flag_', category: 'Antennas' },
+        { prefix: 'countryflag_', category: 'Antennas' },
+        { prefix: 'streamerflag_', category: 'Antennas' },
+        { prefix: 'at_', category: 'Antennas' },
         { prefix: 'avatarborder_', category: 'AvatarBorders' },
         { prefix: 'body_', category: 'Bodies' },
         { prefix: 'boost_', category: 'Boosts' },
         { prefix: 'decal_', category: 'Decals' },
+        { prefix: 'skin_', category: 'Decals' },
+        { prefix: 'skins_', category: 'Decals' },
+        { prefix: 'esportsteam_', category: 'Decals' },
         { prefix: 'engineaudio_', category: 'EngineSounds' },
         { prefix: 'explosion_', category: 'GoalExplosions' },
         { prefix: 'hat_', category: 'Toppers' },
@@ -662,10 +670,28 @@ class SwapEngine extends EventEmitter {
     }
   }
 
+  getMissingThumbnailsInfo() {
+    this.scanLocalCookedPCForNewItems();
+    if (!this.thumbnailsMap) this.thumbnailsMap = {};
+    const SKIP_CATEGORIES = new Set(['Anthems']);
+    const missing = this.catalog.filter(item => {
+      if (SKIP_CATEGORIES.has(item.category)) return false;
+      const key = (item.name || '').toLowerCase();
+      return this.thumbnailsMap[key] === undefined;
+    });
+    const missingCount = missing.length;
+    // Estimate download weight (approx 25KB per icon)
+    const weightMB = (missingCount * 0.025).toFixed(1);
+    return {
+      missingCount,
+      weightMB,
+      totalCatalog: this.catalog.length
+    };
+  }
+
   async downloadMissingThumbnails(onProgress) {
     if (!this.thumbnailsMap) this.thumbnailsMap = {};
 
-    // Build list of catalog items that have no cached thumbnail
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
@@ -679,44 +705,54 @@ class SwapEngine extends EventEmitter {
       return { ok: true, resolved: 0, total: 0 };
     }
 
-    this.logger.info(`SwapEngine: Downloading thumbnails for ${total} missing items...`);
+    this.logger.info(`SwapEngine: Downloading thumbnails for ${total} missing items with parallel batching...`);
     let resolved = 0;
+    let processed = 0;
     const mapFile = path.join(this.appData, 'thumbnails_map.json');
 
-    for (const item of missing) {
-      const nameLower = (item.name || '').toLowerCase();
-      // Skip if resolved while we were processing
-      if (this.thumbnailsMap[nameLower] !== undefined) { resolved++; continue; }
+    // High-speed concurrent worker pool (15 parallel requests)
+    const CONCURRENCY = 15;
+    const queue = [...missing];
 
-      try {
-        const url = this.getRlgUrl(item.name, item.category);
-        if (url) {
-          const imageUri = await this.scrapeRlgImage(url);
-          this.thumbnailsMap[nameLower] = imageUri || '';
-          if (imageUri) {
-            resolved++;
-            this.emit('thumbnail-resolved', { name: item.name, image: imageUri });
+    const worker = async () => {
+      while (queue.length > 0) {
+        const item = queue.shift();
+        if (!item) break;
+        const nameLower = (item.name || '').toLowerCase();
+        if (this.thumbnailsMap[nameLower] !== undefined) {
+          processed++;
+          continue;
+        }
+
+        try {
+          const url = this.getRlgUrl(item.name, item.category);
+          if (url) {
+            const imageUri = await this.scrapeRlgImage(url);
+            this.thumbnailsMap[nameLower] = imageUri || '';
+            if (imageUri) {
+              resolved++;
+              this.emit('thumbnail-resolved', { name: item.name, image: imageUri });
+            }
+          } else {
+            this.thumbnailsMap[nameLower] = '';
           }
-        } else {
+        } catch (err) {
           this.thumbnailsMap[nameLower] = '';
         }
-      } catch (err) {
-        this.thumbnailsMap[nameLower] = '';
-        this.logger.error(`SwapEngine: thumbnail download failed for ${item.name}: ${err.message}`);
+
+        processed++;
+        const progress = Math.round((processed / total) * 100);
+        if (onProgress && processed % 5 === 0) {
+          onProgress({ phase: 'thumbnails', progress, resolved, total, current: item.name });
+        }
       }
+    };
 
-      // Save periodically (every 20 items)
-      if (resolved % 20 === 0) {
-        try { fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2)); } catch (_) {}
-      }
-
-      const idx = missing.indexOf(item) + 1;
-      const progress = Math.round((idx / total) * 100);
-      if (onProgress) onProgress({ phase: 'thumbnails', progress, resolved, total, current: item.name });
-
-      // Polite rate-limit: 600ms between requests
-      await new Promise(r => setTimeout(r, 600));
+    const workers = [];
+    for (let i = 0; i < CONCURRENCY; i++) {
+      workers.push(worker());
     }
+    await Promise.all(workers);
 
     // Final save
     try { fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2)); } catch (_) {}

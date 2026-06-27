@@ -7,9 +7,9 @@ let catalog = [];
 let currentSearch = '';
 let currentCategory = 'All';
 let searchTimeout = null;
-let currentLimit = 80;
+let currentLimit = 40;
 let hasMore = true;
-const CATALOG_PAGE = 80;
+const CATALOG_PAGE = 40;
 
 
 
@@ -150,28 +150,34 @@ document.getElementById('swaps-category-select')?.addEventListener('change', e =
 });
 
 document.getElementById('btn-swaps-refresh')?.addEventListener('click', async () => {
-  const bar = document.getElementById('swaps-download-progress-bar');
-  const fill = document.getElementById('swaps-progress-fill');
-  const text = document.getElementById('swaps-progress-text');
-  const pct = document.getElementById('swaps-progress-pct');
-  const btn = document.getElementById('btn-swaps-refresh');
   const popup = document.getElementById('swaps-refresh-popup');
-
   if (popup) popup.style.display = 'none';
 
-  if (bar) bar.style.display = 'flex';
-  if (fill) fill.style.width = '0%';
-  if (text) text.textContent = 'Starting update...';
-  if (pct) pct.textContent = '0%';
-  if (btn) btn.disabled = true;
-
   try {
+    const info = await rc.getMissingThumbnailsInfo();
+    if (!info || info.missingCount === 0) {
+      toast('Tutti gli elementi ed icone del gioco sono già aggiornati! ✅', 'success');
+      return;
+    }
+
+    const msg = `Trovati ${info.missingCount} elementi/icone mancanti nel catalogo.\n\nDimensione totale stimata file: ${info.weightMB} MB.\n\nVuoi avviare il download ora?`;
+    if (!confirm(msg)) return;
+
+    const bar = document.getElementById('swaps-download-progress-bar');
+    const fill = document.getElementById('swaps-progress-fill');
+    const text = document.getElementById('swaps-progress-text');
+    const pct = document.getElementById('swaps-progress-pct');
+    const btn = document.getElementById('btn-swaps-refresh');
+
+    if (bar) bar.style.display = 'flex';
+    if (fill) fill.style.width = '0%';
+    if (text) text.textContent = 'Aggiornamento catalogo...';
+    if (pct) pct.textContent = '0%';
+    if (btn) btn.disabled = true;
+
     await rc.refreshCatalog();
-    // downloadMissingThumbnails will start automatically via the 'complete' phase handler below
   } catch (err) {
-    if (text) text.textContent = `Error: ${err.message}`;
-    if (btn) btn.disabled = false;
-    setTimeout(() => { if (bar) bar.style.display = 'none'; }, 4000);
+    toast(`Errore durante il refresh: ${err.message}`, 'error');
   }
 });
 
@@ -262,16 +268,34 @@ async function fetchAndRenderCatalog(resetLimit = false) {
     if (!items || items.length === 0) {
       grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1">
-          <p>No catalog items found</p>
+          <p>Nessun oggetto trovato nel catalogo</p>
         </div>`;
       return;
     }
 
     hasMore = items.length > currentLimit;
-    catalog = items.slice(0, currentLimit);
+    const newItems = items.slice(0, currentLimit);
+    catalog = newItems;
 
-    grid.innerHTML = catalog.map(itemCard).join('');
-    attachCardListeners(grid);
+    const existingBtn = document.getElementById('catalog-load-more');
+    if (existingBtn) existingBtn.remove();
+
+    if (resetLimit) {
+      grid.innerHTML = catalog.map(itemCard).join('');
+      attachCardListeners(grid);
+    } else {
+      // Incremental append for fast performance
+      const existingCardCount = grid.querySelectorAll('.catalog-card').length;
+      const appendItems = catalog.slice(existingCardCount);
+      if (appendItems.length > 0) {
+        const temp = document.createElement('div');
+        temp.innerHTML = appendItems.map(itemCard).join('');
+        while (temp.firstChild) {
+          grid.appendChild(temp.firstChild);
+        }
+        attachCardListeners(grid, appendItems.length);
+      }
+    }
 
     if (hasMore) {
       appendLoadMore(grid);
@@ -286,7 +310,7 @@ function showCatalogError(msg) {
   const grid = document.getElementById('catalog-grid');
   if (grid) grid.innerHTML = `
     <div class="empty-state" style="grid-column:1/-1">
-      <p style="color:#f43f5e">Catalog error</p>
+      <p style="color:#f43f5e">Errore catalogo</p>
       <span>${escapeHtml(msg)}</span>
     </div>`;
 }
@@ -341,11 +365,11 @@ function appendLoadMore(grid) {
   const btn = document.createElement('button');
   btn.id = 'catalog-load-more';
   btn.className = 'btn btn-ghost';
-  btn.style.cssText = 'grid-column:1/-1;margin:8px auto;display:block;';
-  btn.textContent = `Load more`;
+  btn.style.cssText = 'grid-column:1/-1;margin:16px auto;display:block;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;';
+  btn.textContent = `Mostra altri oggetti`;
   btn.addEventListener('click', () => {
     currentLimit += CATALOG_PAGE;
-    fetchAndRenderCatalog();
+    fetchAndRenderCatalog(false);
   });
   grid.appendChild(btn);
 }
