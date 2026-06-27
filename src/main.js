@@ -1846,16 +1846,15 @@ ipcMain.on('rocketstats-update', (_, data) => {
 });
 
 // RocketStats — reset stats di sessione
-// Scrive rs_reset_stats nel config.cfg di BakkesMod; il plugin lo esegue al prossimo tick
 ipcMain.handle('bakkes-rocketstats-reset', () => {
   try {
+    tracker._resetSession();
     const cfgPath = path.join(
       os.homedir(), 'AppData', 'Roaming', 'bakkesmod', 'bakkesmod', 'cfg', 'config.cfg'
     );
-    // Appende il comando; BakkesMod lo esegue automaticamente se è in esecuzione
     const cmd = 'rs_reset_stats\n';
     fs.appendFileSync(cfgPath, cmd, 'utf8');
-    logger.info('[RocketStats] rs_reset_stats scritto in config.cfg');
+    logger.info('[RocketStats] rs_reset_stats written to config.cfg and tracker session reset');
     return { ok: true };
   } catch (err) {
     logger.error(`[RocketStats] reset stats error: ${err.message}`);

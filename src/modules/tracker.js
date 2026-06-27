@@ -766,8 +766,28 @@ class TrackerModule extends EventEmitter {
       if (platform === 'steam') {
         queryIdentifier = parts[1] || playerName;
       }
-      // Sanitize replacement chars (e.g. U+FFFD ♦, ?, zero-width spaces) that cause 404 on tracker.gg
-      queryIdentifier = queryIdentifier.replace(/[\uFFFD\u200B\uFEFF]+/g, '').replace(/\?+$/, '').trim();
+      // If playerName is censored/asterisks, try using platform account ID (parts[1])
+      if (queryIdentifier.includes('*') || !queryIdentifier.trim()) {
+        if (parts[1] && !parts[1].includes('*') && parts[1] !== '0') {
+          queryIdentifier = parts[1];
+        }
+      }
+
+      // Detect censored / private profiles if queryIdentifier is STILL asterisks or empty
+      const strippedAsterisks = queryIdentifier.replace(/\*/g, '').trim();
+      if (!strippedAsterisks || queryIdentifier.replace(/\s/g,'') === '') {
+        this.logger.info(`[roster] Skipping fetch for censored/private player: "${playerName}" (${playerId})`);
+        this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
+        if (this._rosterMap[playerId]) {
+          this._rosterMap[playerId].privateProfile = true;
+          this._rosterMap[playerId].allSkills = {}; // Mark as resolved-but-private
+          this._updateRosterPlayerFromSkills(playerId);
+          this.emit('roster-update', this._buildRoster());
+        }
+        this._rosterFetching.delete(playerId);
+        this._checkAndScheduleMemoryCleanup();
+        return;
+      }
 
       // Stagger requests to avoid Cloudflare rate limit bursts
       const delay = Math.random() * 2000;
@@ -808,12 +828,33 @@ class TrackerModule extends EventEmitter {
           }
         } else {
           this.logger.warn(`[roster] Tracker.gg fallback returned error or no segments for ${playerName}: status=${res.status} error=${res.error || 'no segments'}`);
+          this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
+          if (this._rosterMap[playerId]) {
+            this._rosterMap[playerId].allSkills = {};
+            this._rosterMap[playerId].privateProfile = true;
+            this._updateRosterPlayerFromSkills(playerId);
+            this.emit('roster-update', this._buildRoster());
+          }
         }
       } catch (err) {
         this.logger.error(`[roster] Tracker.gg fallback failed for ${playerName}: ${err.message}`);
+        this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
+        if (this._rosterMap[playerId]) {
+          this._rosterMap[playerId].allSkills = {};
+          this._rosterMap[playerId].privateProfile = true;
+          this._updateRosterPlayerFromSkills(playerId);
+          this.emit('roster-update', this._buildRoster());
+        }
       }
     } else {
       this.logger.warn(`[roster] Tracker.gg fallback skipped for ${playerName}: unknown platform ${platform}`);
+      this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
+      if (this._rosterMap[playerId]) {
+        this._rosterMap[playerId].allSkills = {};
+        this._rosterMap[playerId].privateProfile = true;
+        this._updateRosterPlayerFromSkills(playerId);
+        this.emit('roster-update', this._buildRoster());
+      }
     }
 
     this._rosterFetching.delete(playerId);
@@ -1007,6 +1048,7 @@ class TrackerModule extends EventEmitter {
         team: p.team,
         isLocal: !!p.isLocal,
         isUnranked: isUnranked,
+        privateProfile: !!p.privateProfile,
         score: p.score ?? 0,
         goals: p.goals ?? 0,
         assists: p.assists ?? 0,
