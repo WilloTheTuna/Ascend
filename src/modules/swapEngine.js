@@ -86,6 +86,53 @@ class SwapEngine extends EventEmitter {
     this.swaps = [];
     this.presets = { currentPreset: 'Default', presets: [{ name: 'Default', swaps: [] }] };
     this.catalog = [];
+
+    // Load item names map for auto-translation of all codenames
+    try {
+      const namesFile = path.join(__dirname, 'item_names.json');
+      if (fs.existsSync(namesFile)) {
+        this.itemNamesMap = JSON.parse(fs.readFileSync(namesFile, 'utf8'));
+        this.logger.info(`SwapEngine: Loaded ${Object.keys(this.itemNamesMap).length} item name mappings.`);
+      } else {
+        this.itemNamesMap = {};
+      }
+    } catch (err) {
+      this.itemNamesMap = {};
+      this.logger.error(`SwapEngine: Failed to load item name mappings: ${err.message}`);
+    }
+  }
+
+  getRealItemName(item) {
+    if (!item) return 'Unknown';
+    let code = (item.code || item.id || '').toLowerCase().replace(/_sf$/i, '');
+    let isPaintedT = false;
+    
+    if (code.endsWith('_t')) {
+      code = code.slice(0, -2);
+      isPaintedT = true;
+    }
+    
+    let displayName = null;
+    if (this.itemNamesMap && this.itemNamesMap[code]) {
+      displayName = this.itemNamesMap[code];
+    } else {
+      // Local fallback override mappings if not in JSON database
+      const type = item.category || item.type || '';
+      const fallbackKey = `${type.toLowerCase()}:${(item.label || item.name || '').toLowerCase()}`;
+      if (CODENAME_MAP[fallbackKey]) {
+        displayName = CODENAME_MAP[fallbackKey];
+      } else {
+        displayName = item.label || item.name || 'Unknown';
+      }
+    }
+    
+    if (isPaintedT && displayName && !displayName.endsWith(' T')) {
+      if (!displayName.toLowerCase().endsWith(' t')) {
+        displayName = `${displayName} T`;
+      }
+    }
+    
+    return displayName;
   }
 
   async init(cfg) {
@@ -538,9 +585,9 @@ class SwapEngine extends EventEmitter {
       const searchTerms = ALIASES[query] || [query];
 
       list = list.filter(item => {
-        const label = (item.label || item.name || '').toLowerCase();
+        const realName = this.getRealItemName(item).toLowerCase();
         const code = (item.code || item.id || '').toLowerCase();
-        return searchTerms.some(term => label.includes(term) || code.includes(term));
+        return searchTerms.some(term => realName.includes(term) || code.includes(term));
       });
     }
 
@@ -550,11 +597,7 @@ class SwapEngine extends EventEmitter {
     return sliced.map(item => {
       const type = item.category || item.type || 'Item';
       const targetFile = DEFAULTS_BY_CATEGORY[type] || item.file || item.targetFile || '';
-      let name = item.label || item.name || 'Unknown';
-      const mapKey = `${type.toLowerCase()}:${name.toLowerCase()}`;
-      if (CODENAME_MAP[mapKey]) {
-        name = CODENAME_MAP[mapKey];
-      }
+      const name = this.getRealItemName(item);
       let image = this.thumbnailsMap ? (this.thumbnailsMap[name.toLowerCase()] || '') : '';
       if (!image) {
         if (type === 'Decals' && name.includes(':')) {
@@ -779,11 +822,7 @@ class SwapEngine extends EventEmitter {
 
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
-      let name = item.label || item.name || '';
-      const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
-      if (CODENAME_MAP[mapKey]) {
-        name = CODENAME_MAP[mapKey];
-      }
+      const name = this.getRealItemName(item);
       const key = name.toLowerCase();
       if (this.thumbnailsMap[key] !== undefined) {
         downloadedCount++;
@@ -808,11 +847,7 @@ class SwapEngine extends EventEmitter {
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
-      let name = item.label || item.name || '';
-      const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
-      if (CODENAME_MAP[mapKey]) {
-        name = CODENAME_MAP[mapKey];
-      }
+      const name = this.getRealItemName(item);
       const key = name.toLowerCase();
       return this.thumbnailsMap[key] === undefined;
     });
@@ -836,11 +871,7 @@ class SwapEngine extends EventEmitter {
       while (queue.length > 0) {
         const item = queue.shift();
         if (!item) break;
-        let name = item.label || item.name || '';
-        const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
-        if (CODENAME_MAP[mapKey]) {
-          name = CODENAME_MAP[mapKey];
-        }
+        const name = this.getRealItemName(item);
         const nameLower = name.toLowerCase();
         if (this.thumbnailsMap[nameLower] !== undefined) {
           processed++;
