@@ -541,6 +541,8 @@ ipcMain.handle('app-check-update', async () => {
     }
   }
 
+  logger.info(`[Updater] check-update requested. currentVersion=${currentVersion}`);
+
   // Fallback to real GitHub check (includes pre-releases)
   try {
     const res = await fetch('https://api.github.com/repos/WilloTheTuna/Ascend/releases', {
@@ -563,6 +565,8 @@ ipcMain.handle('app-check-update', async () => {
           if (p1 > p2) { isNewer = true; break; }
           if (p1 < p2) { break; }
         }
+
+        logger.info(`[Updater] GitHub release check: latestVersion=${latestVersion}, currentVersion=${currentVersion}, isNewer=${isNewer}`);
 
         if (isNewer) {
           const exeAsset = release.assets.find(a => a.name.endsWith('.exe'));
