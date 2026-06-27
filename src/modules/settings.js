@@ -22,6 +22,7 @@ const DEFAULTS = {
     selectedPlaylist: '2v2',
     overlayPos: { x: 1650, y: 39 }
   },
+  configVersion: 3,
   rocketStatsTheme: 'Circle',
   rocketStatsScaleMultiplier: 0.7,
   rocketStatsOffsetX: 29,
@@ -61,25 +62,24 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration: apply calibrated defaults for fields that are missing
-        // or still at the old uncalibrated defaults
-        if (saved.ingameRankOffsetX === undefined) saved.ingameRankOffsetX = DEFAULTS.ingameRankOffsetX;
-        if (saved.ingameRankOffsetY === undefined) saved.ingameRankOffsetY = DEFAULTS.ingameRankOffsetY;
-        if (saved.ingameRankOffsetYBlue === undefined || saved.ingameRankOffsetYBlue === 0) saved.ingameRankOffsetYBlue = DEFAULTS.ingameRankOffsetYBlue;
-        if (saved.ingameRankOffsetYOrange === undefined || saved.ingameRankOffsetYOrange === 0) saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
-        if (saved.ingameRankOffsetXBlue === undefined) saved.ingameRankOffsetXBlue = DEFAULTS.ingameRankOffsetXBlue;
-        if (saved.ingameRankOffsetXOrange === undefined) saved.ingameRankOffsetXOrange = DEFAULTS.ingameRankOffsetXOrange;
-        if (saved.ingameRankScaleMultiplier === undefined || saved.ingameRankScaleMultiplier >= 1.0) {
+        // Migration v3: Force-recalibrate all positions and scales to exact values
+        if (!saved.configVersion || saved.configVersion < 3) {
+          saved.configVersion = 3;
+          saved.ingameRankOffsetX = DEFAULTS.ingameRankOffsetX;
+          saved.ingameRankOffsetY = DEFAULTS.ingameRankOffsetY;
+          saved.ingameRankOffsetXBlue = DEFAULTS.ingameRankOffsetXBlue;
+          saved.ingameRankOffsetYBlue = DEFAULTS.ingameRankOffsetYBlue;
+          saved.ingameRankOffsetXOrange = DEFAULTS.ingameRankOffsetXOrange;
+          saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
           saved.ingameRankScaleMultiplier = DEFAULTS.ingameRankScaleMultiplier;
-        }
-        if (saved.ingameRankUiScalePercent === undefined || saved.ingameRankUiScalePercent >= 100) {
           saved.ingameRankUiScalePercent = DEFAULTS.ingameRankUiScalePercent;
-        }
-        if (saved.rocketStatsScaleMultiplier === undefined || saved.rocketStatsScaleMultiplier >= 0.75) {
           saved.rocketStatsScaleMultiplier = DEFAULTS.rocketStatsScaleMultiplier;
-        }
-        if (saved.rocketStatsUiScalePercent === undefined || saved.rocketStatsUiScalePercent >= 100) {
+          saved.rocketStatsOffsetX = DEFAULTS.rocketStatsOffsetX;
+          saved.rocketStatsOffsetY = DEFAULTS.rocketStatsOffsetY;
           saved.rocketStatsUiScalePercent = DEFAULTS.rocketStatsUiScalePercent;
+          try {
+            fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
+          } catch (_) {}
         }
         if (saved.ingameRankTriggerType === undefined) saved.ingameRankTriggerType = '';
         if (saved.ingameRankTriggerIndex === undefined) saved.ingameRankTriggerIndex = '';
