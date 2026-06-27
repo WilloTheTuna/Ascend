@@ -484,28 +484,10 @@ ipcMain.handle('app-check-update', async () => {
   const fs = require('fs');
   const path = require('path');
   const os = require('os');
-  const packageJson = require('../package.json');
-  
-  let currentVersion = packageJson.version;
-  const installedVerPath = path.join(os.homedir(), '.gemini', 'antigravity', 'installed_version.txt');
-  
-  if (fs.existsSync(installedVerPath)) {
-    try {
-      const savedVer = fs.readFileSync(installedVerPath, 'utf8').trim();
-      const parts1 = savedVer.split('.').map(Number);
-      const parts2 = currentVersion.split('.').map(Number);
-      let isSavedNewer = false;
-      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const p1 = parts1[i] || 0;
-        const p2 = parts2[i] || 0;
-        if (p1 > p2) { isSavedNewer = true; break; }
-        if (p1 < p2) { break; }
-      }
-      if (isSavedNewer) {
-        currentVersion = savedVer;
-      }
-    } catch (_) {}
-  }
+  // NOTE: simPath simulation kept for dev testing only
+
+  // Use app.getVersion() — always correct in both dev and packaged NSIS installs
+  let currentVersion = app.getVersion();
 
   const simPath = path.join(os.homedir(), '.gemini', 'antigravity', 'update_simulation.json');
   if (fs.existsSync(simPath)) {
