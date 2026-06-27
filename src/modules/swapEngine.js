@@ -662,6 +662,70 @@ class SwapEngine extends EventEmitter {
     }
   }
 
+  async downloadMissingThumbnails(onProgress) {
+    if (!this.thumbnailsMap) this.thumbnailsMap = {};
+
+    // Build list of catalog items that have no cached thumbnail
+    const SKIP_CATEGORIES = new Set(['Anthems']);
+    const missing = this.catalog.filter(item => {
+      if (SKIP_CATEGORIES.has(item.category)) return false;
+      const key = (item.name || '').toLowerCase();
+      return this.thumbnailsMap[key] === undefined;
+    });
+
+    const total = missing.length;
+    if (total === 0) {
+      if (onProgress) onProgress({ phase: 'thumbnails-complete', progress: 100, resolved: 0, total: 0 });
+      return { ok: true, resolved: 0, total: 0 };
+    }
+
+    this.logger.info(`SwapEngine: Downloading thumbnails for ${total} missing items...`);
+    let resolved = 0;
+    const mapFile = path.join(this.appData, 'thumbnails_map.json');
+
+    for (const item of missing) {
+      const nameLower = (item.name || '').toLowerCase();
+      // Skip if resolved while we were processing
+      if (this.thumbnailsMap[nameLower] !== undefined) { resolved++; continue; }
+
+      try {
+        const url = this.getRlgUrl(item.name, item.category);
+        if (url) {
+          const imageUri = await this.scrapeRlgImage(url);
+          this.thumbnailsMap[nameLower] = imageUri || '';
+          if (imageUri) {
+            resolved++;
+            this.emit('thumbnail-resolved', { name: item.name, image: imageUri });
+          }
+        } else {
+          this.thumbnailsMap[nameLower] = '';
+        }
+      } catch (err) {
+        this.thumbnailsMap[nameLower] = '';
+        this.logger.error(`SwapEngine: thumbnail download failed for ${item.name}: ${err.message}`);
+      }
+
+      // Save periodically (every 20 items)
+      if (resolved % 20 === 0) {
+        try { fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2)); } catch (_) {}
+      }
+
+      const idx = missing.indexOf(item) + 1;
+      const progress = Math.round((idx / total) * 100);
+      if (onProgress) onProgress({ phase: 'thumbnails', progress, resolved, total, current: item.name });
+
+      // Polite rate-limit: 600ms between requests
+      await new Promise(r => setTimeout(r, 600));
+    }
+
+    // Final save
+    try { fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2)); } catch (_) {}
+    if (onProgress) onProgress({ phase: 'thumbnails-complete', progress: 100, resolved, total });
+    this.logger.info(`SwapEngine: Downloaded ${resolved}/${total} missing thumbnails.`);
+    return { ok: true, resolved, total };
+  }
+
+
   checkNewLocalItems() {
     if (!this.cookedDir || !fs.existsSync(this.cookedDir)) return 0;
     try {

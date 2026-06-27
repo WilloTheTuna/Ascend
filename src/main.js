@@ -669,6 +669,11 @@ ipcMain.handle('catalog-refresh', async (event) => {
   });
 });
 ipcMain.handle('catalog-check-new', () => swapEngine.checkNewLocalItems());
+ipcMain.handle('catalog-download-missing', async (event) => {
+  return swapEngine.downloadMissingThumbnails((progressData) => {
+    event.sender.send('catalog-refresh-progress', progressData);
+  });
+});
 
 // Ball packs
 ipcMain.handle('ballpacks-list', () => swapEngine.listBallPacks());

@@ -161,14 +161,15 @@ document.getElementById('btn-swaps-refresh')?.addEventListener('click', async ()
 
   if (bar) bar.style.display = 'flex';
   if (fill) fill.style.width = '0%';
-  if (text) text.textContent = 'Avvio aggiornamento...';
+  if (text) text.textContent = 'Starting update...';
   if (pct) pct.textContent = '0%';
   if (btn) btn.disabled = true;
 
   try {
     await rc.refreshCatalog();
+    // downloadMissingThumbnails will start automatically via the 'complete' phase handler below
   } catch (err) {
-    if (text) text.textContent = `Errore: ${err.message}`;
+    if (text) text.textContent = `Error: ${err.message}`;
     if (btn) btn.disabled = false;
     setTimeout(() => { if (bar) bar.style.display = 'none'; }, 4000);
   }
@@ -185,25 +186,49 @@ rc.on('catalog-refresh-progress', (data) => {
 
   bar.style.display = 'flex';
   if (data.phase === 'scan') {
-    text.textContent = 'Scansione file di gioco locali...';
+    text.textContent = 'Scanning local game files...';
     fill.style.width = `${data.progress}%`;
     pct.textContent = `${data.progress}%`;
   } else if (data.phase === 'download') {
-    text.textContent = 'Scaricamento database icone...';
+    text.textContent = 'Downloading icon database...';
     fill.style.width = `${data.progress}%`;
     pct.textContent = `${data.progress}%`;
   } else if (data.phase === 'complete') {
-    text.textContent = `Aggiornamento completato! (${data.count || 0} totali, ${data.addedCount || 0} nuovi importati)`;
+    const addedText = data.addedCount > 0 ? ` (+${data.addedCount} new)` : '';
+    text.textContent = `Database updated${addedText}. Downloading missing icons...`;
+    fill.style.width = '100%';
+    pct.textContent = '100%';
+    filterAndRender();
+    updateMissingItemsBadge();
+    // Auto-download missing thumbnails
+    setTimeout(async () => {
+      fill.style.width = '0%';
+      pct.textContent = '0%';
+      try {
+        await rc.downloadMissingThumbnails();
+      } catch (e) {
+        text.textContent = `Icon download error: ${e.message}`;
+        if (btn) btn.disabled = false;
+        setTimeout(() => { bar.style.display = 'none'; }, 4000);
+      }
+    }, 800);
+  } else if (data.phase === 'thumbnails') {
+    const label = data.current ? `Downloading: ${data.current}` : 'Downloading icons...';
+    text.textContent = `${label} (${data.resolved}/${data.total})`;
+    fill.style.width = `${data.progress}%`;
+    pct.textContent = `${data.progress}%`;
+  } else if (data.phase === 'thumbnails-complete') {
+    const msg = data.total === 0
+      ? 'All icons up to date!'
+      : `Downloaded ${data.resolved}/${data.total} icons!`;
+    text.textContent = msg;
     fill.style.width = '100%';
     pct.textContent = '100%';
     if (btn) btn.disabled = false;
-    setTimeout(() => {
-      bar.style.display = 'none';
-      filterAndRender(); // Reload catalog
-      updateMissingItemsBadge();
-    }, 1000);
+    filterAndRender();
+    setTimeout(() => { bar.style.display = 'none'; }, 2000);
   } else if (data.phase === 'failed') {
-    text.textContent = `Errore: ${data.error || 'fallito'}`;
+    text.textContent = `Error: ${data.error || 'failed'}`;
     fill.style.width = '0%';
     pct.textContent = '0%';
     if (btn) btn.disabled = false;
@@ -212,6 +237,8 @@ rc.on('catalog-refresh-progress', (data) => {
     }, 4000);
   }
 });
+
+
 
 function filterAndRender() {
   fetchAndRenderCatalog(true);
