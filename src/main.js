@@ -471,6 +471,8 @@ ipcMain.on('window-maximize', () => mainWindow?.isMaximized() ? mainWindow.unmax
 ipcMain.on('window-close', () => mainWindow?.hide());
 
 // Updates & Reinstall
+let latestUpdateInfo = null;
+
 ipcMain.handle('app-check-update', async () => {
   const fs = require('fs');
   const path = require('path');
@@ -516,6 +518,10 @@ ipcMain.handle('app-check-update', async () => {
       }
 
       if (isNewer) {
+        latestUpdateInfo = {
+          version: data.version,
+          downloadUrl: data.downloadUrl || ''
+        };
         return {
           hasUpdate: true,
           version: data.version,
@@ -527,6 +533,48 @@ ipcMain.handle('app-check-update', async () => {
       logger.error(`[Updater] Failed to parse simulation file: ${err.message}`);
     }
   }
+
+  // Fallback to real GitHub check
+  try {
+    const res = await fetch('https://api.github.com/repos/WilloTheTuna/Ascend/releases/latest', {
+      headers: { 'User-Agent': 'Ascend-Updater' }
+    });
+    if (res.ok) {
+      const release = await res.json();
+      const latestVersion = release.tag_name.replace(/^v/, '');
+      
+      const v1 = latestVersion;
+      const v2 = currentVersion;
+      const parts1 = v1.split('.').map(Number);
+      const parts2 = v2.split('.').map(Number);
+      let isNewer = false;
+      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 > p2) { isNewer = true; break; }
+        if (p1 < p2) { break; }
+      }
+
+      if (isNewer) {
+        const exeAsset = release.assets.find(a => a.name.endsWith('.exe'));
+        if (exeAsset) {
+          latestUpdateInfo = {
+            version: latestVersion,
+            downloadUrl: exeAsset.browser_download_url
+          };
+          return {
+            hasUpdate: true,
+            version: latestVersion,
+            releaseNotes: release.body || 'Nuova versione di Ascend disponibile.',
+            downloadUrl: exeAsset.browser_download_url
+          };
+        }
+      }
+    }
+  } catch (err) {
+    logger.error(`[Updater] GitHub update check failed: ${err.message}`);
+  }
+
   return { hasUpdate: false, version: currentVersion };
 });
 
@@ -540,7 +588,16 @@ ipcMain.handle('app-install-update', async () => {
   let downloadUrl = '';
   let version = '';
 
-  if (fs.existsSync(simPath)) {
+  if (latestUpdateInfo && latestUpdateInfo.downloadUrl) {
+    downloadUrl = latestUpdateInfo.downloadUrl;
+    version = latestUpdateInfo.version;
+    try {
+      fs.writeFileSync(installedVerPath, version, 'utf8');
+      logger.info(`[Updater] Upgrade: saved target version ${version} to installed_version.txt`);
+    } catch (err) {
+      logger.error(`[Updater] Failed to write version: ${err.message}`);
+    }
+  } else if (fs.existsSync(simPath)) {
     try {
       const data = JSON.parse(fs.readFileSync(simPath, 'utf8'));
       version = data.version;
