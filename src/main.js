@@ -481,49 +481,11 @@ ipcMain.on('window-close', () => mainWindow?.hide());
 let latestUpdateInfo = null;
 
 ipcMain.handle('app-check-update', async () => {
-  const fs = require('fs');
-  const path = require('path');
-  const os = require('os');
-  // NOTE: simPath simulation kept for dev testing only
-
   // Use app.getVersion() — always correct in both dev and packaged NSIS installs
-  let currentVersion = app.getVersion();
-
-  const simPath = path.join(os.homedir(), '.gemini', 'antigravity', 'update_simulation.json');
-  if (fs.existsSync(simPath)) {
-    try {
-      const data = JSON.parse(fs.readFileSync(simPath, 'utf8'));
-      
-      const v1 = data.version || '1.0.0';
-      const v2 = currentVersion;
-      const parts1 = v1.split('.').map(Number);
-      const parts2 = v2.split('.').map(Number);
-      let isNewer = false;
-      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const p1 = parts1[i] || 0;
-        const p2 = parts2[i] || 0;
-        if (p1 > p2) { isNewer = true; break; }
-        if (p1 < p2) { break; }
-      }
-
-      if (isNewer) {
-        latestUpdateInfo = {
-          version: data.version,
-          downloadUrl: data.downloadUrl || ''
-        };
-        return {
-          hasUpdate: true,
-          version: data.version,
-          releaseNotes: data.releaseNotes || 'Aggiornamento rilevato.',
-          downloadUrl: data.downloadUrl || ''
-        };
-      }
-    } catch (err) {
-      logger.error(`[Updater] Failed to parse simulation file: ${err.message}`);
-    }
-  }
-
+  const currentVersion = app.getVersion();
   logger.info(`[Updater] check-update requested. currentVersion=${currentVersion}`);
+
+
 
   // Fallback to real GitHub check (includes pre-releases)
   try {
