@@ -33,21 +33,31 @@ async function main() {
     // 2. Check if release already exists
     let release = null;
     const getRelRes = await fetch(`https://api.github.com/repos/WilloTheTuna/Ascend/releases/tags/${tagName}`, { headers });
+    const releasePayload = {
+      tag_name: tagName,
+      name: `${tagName} - Early Demo`,
+      body: `Automated pre-release build for Ascend v${version}. Includes performance optimizations and latest feature updates.`,
+      draft: false,
+      prerelease: true
+    };
+
     if (getRelRes.ok) {
       release = await getRelRes.json();
-      console.log(`[auto-release] Found existing release for ${tagName}`);
+      console.log(`[auto-release] Updating existing release for ${tagName} to English pre-release...`);
+      const patchRes = await fetch(release.url, {
+        method: 'PATCH',
+        headers: { ...headers, 'Content-Type': 'application/json' },
+        body: JSON.stringify(releasePayload)
+      });
+      if (patchRes.ok) {
+        release = await patchRes.json();
+      }
     } else {
-      console.log(`[auto-release] Creating new release for ${tagName}...`);
+      console.log(`[auto-release] Creating new English pre-release for ${tagName}...`);
       const createRes = await fetch('https://api.github.com/repos/WilloTheTuna/Ascend/releases', {
         method: 'POST',
         headers: { ...headers, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tag_name: tagName,
-          name: `${tagName} - Release`,
-          body: `Aggiornamento automatico versione ${version} di Ascend.`,
-          draft: false,
-          prerelease: false
-        })
+        body: JSON.stringify(releasePayload)
       });
       if (!createRes.ok) {
         const errText = await createRes.text();
