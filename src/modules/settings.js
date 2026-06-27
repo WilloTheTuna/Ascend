@@ -23,12 +23,12 @@ const DEFAULTS = {
     overlayPos: { x: 1650, y: 39 }
   },
   rocketStatsTheme: 'Circle',
-  rocketStatsScaleMultiplier: 0.70,
-  rocketStatsOffsetX: 29,
-  rocketStatsOffsetY: 78,
+  rocketStatsScaleMultiplier: 0.78,
+  rocketStatsOffsetX: 28,
+  rocketStatsOffsetY: 79,
   rocketStatsPlaylist: 'current',
   rocketStatsShowMmrDelta: true,
-  rocketStatsUiScalePercent: 90,
+  rocketStatsUiScalePercent: 100,
   
   // IngameRank configuration defaults (calibrated)
   ingameRankEnabled: true,
@@ -41,14 +41,14 @@ const DEFAULTS = {
   ingameRankHoldToShow: true,
   ingameRankHotkey: 'Tab',
   ingameRankControllerButton: 32, // Back button (Scoreboard default on controller)
-  ingameRankScaleMultiplier: 0.93,
+  ingameRankScaleMultiplier: 1.03,
   ingameRankOffsetX: -60,
   ingameRankOffsetY: 0,
   ingameRankOffsetXBlue: 0,
-  ingameRankOffsetYBlue: 3,
+  ingameRankOffsetYBlue: 0,
   ingameRankOffsetXOrange: 0,
-  ingameRankOffsetYOrange: -2,
-  ingameRankUiScalePercent: 90
+  ingameRankOffsetYOrange: 0,
+  ingameRankUiScalePercent: 100
 };
 
 class SettingsManager {
