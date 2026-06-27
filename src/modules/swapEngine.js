@@ -698,10 +698,11 @@ class SwapEngine extends EventEmitter {
 
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
-      const key = (item.name || '').toLowerCase();
-      if (this.thumbnailsMap[key]) {
+      const name = item.label || item.name || '';
+      const key = name.toLowerCase();
+      if (this.thumbnailsMap[key] !== undefined) {
         downloadedCount++;
-      } else if (this.thumbnailsMap[key] === undefined) {
+      } else {
         missing.push(item);
       }
     }

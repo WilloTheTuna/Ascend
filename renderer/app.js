@@ -134,7 +134,7 @@ async function updateMissingItemsBadge() {
       if (btn) btn.classList.remove('pulse');
     }
   } catch (err) {
-    rc?.logError?.(`Errore nel controllo dei nuovi oggetti: ${err.message}`);
+    rc?.logError?.(`Error checking new items: ${err.message}`);
   }
 }
 
@@ -157,11 +157,11 @@ document.getElementById('btn-swaps-refresh')?.addEventListener('click', async ()
   try {
     const info = await rc.getMissingThumbnailsInfo();
     if (!info || info.missingCount === 0) {
-      toast('Tutti gli elementi ed icone del gioco sono già aggiornati! ✅', 'success');
+      toast('All game items and icons are already up to date! ✅', 'success');
       return;
     }
 
-    const msg = `Trovati ${info.missingCount} elementi/icone mancanti nel catalogo.\n\nDimensione totale stimata file: ${info.weightMB} MB.\n\nVuoi avviare il download ora?`;
+    const msg = `Found ${info.missingCount} missing items/icons in the catalog.\n\nEstimated total file size: ${info.weightMB} MB.\n\nDo you want to start the download now?`;
     if (!confirm(msg)) return;
 
     const bar = document.getElementById('swaps-download-progress-bar');
@@ -172,13 +172,13 @@ document.getElementById('btn-swaps-refresh')?.addEventListener('click', async ()
 
     if (bar) bar.style.display = 'flex';
     if (fill) fill.style.width = '0%';
-    if (text) text.textContent = 'Aggiornamento catalogo...';
+    if (text) text.textContent = 'Updating catalog...';
     if (pct) pct.textContent = '0%';
     if (btn) btn.disabled = true;
 
     await rc.refreshCatalog();
   } catch (err) {
-    toast(`Errore durante il refresh: ${err.message}`, 'error');
+    toast(`Error during refresh: ${err.message}`, 'error');
   }
 });
 
@@ -269,7 +269,7 @@ async function fetchAndRenderCatalog(resetLimit = false) {
     if (!items || items.length === 0) {
       grid.innerHTML = `
         <div class="empty-state" style="grid-column:1/-1">
-          <p>Nessun oggetto trovato nel catalogo</p>
+          <p>No catalog items found</p>
         </div>`;
       return;
     }
@@ -324,7 +324,7 @@ function showCatalogError(msg) {
   const grid = document.getElementById('catalog-grid');
   if (grid) grid.innerHTML = `
     <div class="empty-state" style="grid-column:1/-1">
-      <p style="color:#f43f5e">Errore catalogo</p>
+      <p style="color:#f43f5e">Catalog error</p>
       <span>${escapeHtml(msg)}</span>
     </div>`;
 }
@@ -380,7 +380,7 @@ function appendLoadMore(grid) {
   btn.id = 'catalog-load-more';
   btn.className = 'btn btn-ghost';
   btn.style.cssText = 'grid-column:1/-1;margin:16px auto;display:block;padding:10px 24px;font-size:14px;font-weight:600;cursor:pointer;';
-  btn.textContent = `Mostra altri oggetti`;
+  btn.textContent = `Load more`;
   btn.addEventListener('click', () => {
     currentLimit += CATALOG_PAGE;
     fetchAndRenderCatalog(false);
@@ -430,8 +430,8 @@ function attachCardListeners(grid, last = null) {
         const swap = swaps.find(s => s.sourceFile === card.dataset.sourceFile);
         if (swap) {
           const res = await rc.revertSwap(swap.id);
-          if (res.ok) { toast('Swap ripristinato', 'success'); await refreshSwaps(); }
-          else toast(res.error || 'Ripristino fallito', 'error');
+          if (res.ok) { toast('Swap reverted', 'success'); await refreshSwaps(); }
+          else toast(res.error || 'Revert failed', 'error');
         }
       } else {
         const cardType = card.querySelector('.card-type')?.textContent?.trim() || '';
@@ -3149,10 +3149,10 @@ document.getElementById('btn-swap-target-apply')?.addEventListener('click', asyn
   });
 
   if (res.ok) {
-    toast(`Sostituito: ${targetLabel} ➔ ${activeCatalogItemToSwap.name}`, 'success');
+    toast(`Swapped: ${targetLabel} ➔ ${activeCatalogItemToSwap.name}`, 'success');
     await refreshSwaps();
   } else {
-    toast(res.error || 'Swap fallito', 'error');
+    toast(res.error || 'Swap failed', 'error');
   }
   activeCatalogItemToSwap = null;
 });
@@ -3210,6 +3210,14 @@ function setupUpdaterControls() {
     modal.style.display = 'none';
   });
 
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal && !btnCancel.disabled) {
+        modal.style.display = 'none';
+      }
+    });
+  }
+
   btnCheck.addEventListener('click', async () => {
     modalInfo.style.display = 'block';
     modalInfo.textContent = 'Checking for updates...';
@@ -3224,7 +3232,7 @@ function setupUpdaterControls() {
         btnCheck.style.display = 'none';
         btnUpdate.classList.add('pulse');
         if (badge) badge.style.display = 'block';
-        toast('Update found!', 'success');
+        toast('New update found!', 'success');
       } else {
         modalInfo.innerHTML = `
           <div style="color: var(--text-sub); font-size: 12.5px;">✓ You are using the latest version of Ascend.</div>
