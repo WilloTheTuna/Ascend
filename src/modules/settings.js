@@ -22,14 +22,14 @@ const DEFAULTS = {
     selectedPlaylist: '2v2',
     overlayPos: { x: 1650, y: 39 }
   },
-  configVersion: 3,
+  configVersion: 4,
   rocketStatsTheme: 'Circle',
   rocketStatsScaleMultiplier: 0.7,
   rocketStatsOffsetX: 29,
   rocketStatsOffsetY: 78,
   rocketStatsPlaylist: 'current',
   rocketStatsShowMmrDelta: true,
-  rocketStatsUiScalePercent: 90,
+  rocketStatsUiScalePercent: 100,
   
   // IngameRank configuration defaults (calibrated)
   ingameRankEnabled: true,
@@ -49,7 +49,7 @@ const DEFAULTS = {
   ingameRankOffsetYBlue: 3,
   ingameRankOffsetXOrange: 0,
   ingameRankOffsetYOrange: -2,
-  ingameRankUiScalePercent: 90
+  ingameRankUiScalePercent: 100
 };
 
 class SettingsManager {
@@ -62,21 +62,11 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v3: Force-recalibrate all positions and scales to exact values
-        if (!saved.configVersion || saved.configVersion < 3) {
-          saved.configVersion = 3;
-          saved.ingameRankOffsetX = DEFAULTS.ingameRankOffsetX;
-          saved.ingameRankOffsetY = DEFAULTS.ingameRankOffsetY;
-          saved.ingameRankOffsetXBlue = DEFAULTS.ingameRankOffsetXBlue;
-          saved.ingameRankOffsetYBlue = DEFAULTS.ingameRankOffsetYBlue;
-          saved.ingameRankOffsetXOrange = DEFAULTS.ingameRankOffsetXOrange;
-          saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
-          saved.ingameRankScaleMultiplier = DEFAULTS.ingameRankScaleMultiplier;
-          saved.ingameRankUiScalePercent = DEFAULTS.ingameRankUiScalePercent;
-          saved.rocketStatsScaleMultiplier = DEFAULTS.rocketStatsScaleMultiplier;
-          saved.rocketStatsOffsetX = DEFAULTS.rocketStatsOffsetX;
-          saved.rocketStatsOffsetY = DEFAULTS.rocketStatsOffsetY;
-          saved.rocketStatsUiScalePercent = DEFAULTS.rocketStatsUiScalePercent;
+        // Migration v4: Set UI scale defaults to 100
+        if (!saved.configVersion || saved.configVersion < 4) {
+          saved.configVersion = 4;
+          saved.ingameRankUiScalePercent = 100;
+          saved.rocketStatsUiScalePercent = 100;
           try {
             fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
           } catch (_) {}
