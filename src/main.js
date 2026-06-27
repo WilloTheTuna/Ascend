@@ -3,13 +3,14 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// Optimize Chromium resource usage and ensure smooth background restoration
+// Optimize Chromium resource usage and ensure instantaneous window restoration
 app.commandLine.appendSwitch('js-flags', '--expose-gc --max-old-space-size=512');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
 app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
-app.commandLine.appendSwitch('enable-oop-rasterization');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('wm-window-animations-disabled');
+app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion,LazyFrameLoading');
 
 const SwapEngine = require('./modules/swapEngine');
 const CanarySystem = require('./modules/canarySystem');

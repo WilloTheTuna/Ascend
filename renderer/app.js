@@ -53,18 +53,26 @@ async function initApp() {
 
 
 
-    // 3. Deferred secondary tabs — totally non-blocking
-    setTimeout(() => {
-      Promise.all([
-        loadBallPacks(), loadDecalPacks(), loadHudPacks(),
-        loadPresets(), loadWorkshopMaps(), loadPlugins(),
-        loadBakkesPlugins(), loadTrackerSession()
-      ]).catch(e => rc?.logError?.(String(e)));
-      
-      // Wire up workshop controls listeners & plugins subnav
-      setupWorkshopListeners();
-      setupPluginsListeners();
-    }, 300);
+    // 3. Deferred secondary tabs — staggered to prevent CPU/IO spikes and lag
+    setTimeout(async () => {
+      try {
+        await loadTrackerSession();
+        await loadPlugins();
+        await loadBakkesPlugins();
+        setupWorkshopListeners();
+        setupPluginsListeners();
+
+        setTimeout(() => loadWorkshopMaps().catch(() => {}), 80);
+        setTimeout(() => loadPresets().catch(() => {}), 160);
+        setTimeout(() => {
+          loadBallPacks().catch(() => {});
+          loadDecalPacks().catch(() => {});
+          loadHudPacks().catch(() => {});
+        }, 240);
+      } catch (e) {
+        rc?.logError?.(String(e));
+      }
+    }, 100);
 
   } catch (err) {
     showCatalogError(err.message);
