@@ -604,6 +604,10 @@ class SwapEngine extends EventEmitter {
     if (fs.existsSync(mapFile)) {
       try {
         this.thumbnailsMap = JSON.parse(fs.readFileSync(mapFile, 'utf8'));
+        if (this.thumbnailsMap) {
+          delete this.thumbnailsMap[""];
+          delete this.thumbnailsMap["undefined"];
+        }
         this.logger.info(`SwapEngine: Loaded thumbnails map from cache (${Object.keys(this.thumbnailsMap).length} items)`);
         return;
       } catch (err) {
@@ -723,7 +727,8 @@ class SwapEngine extends EventEmitter {
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
-      const key = (item.name || '').toLowerCase();
+      const name = item.label || item.name || '';
+      const key = name.toLowerCase();
       return this.thumbnailsMap[key] === undefined;
     });
 
@@ -746,20 +751,21 @@ class SwapEngine extends EventEmitter {
       while (queue.length > 0) {
         const item = queue.shift();
         if (!item) break;
-        const nameLower = (item.name || '').toLowerCase();
+        const name = item.label || item.name || '';
+        const nameLower = name.toLowerCase();
         if (this.thumbnailsMap[nameLower] !== undefined) {
           processed++;
           continue;
         }
 
         try {
-          const url = this.getRlgUrl(item.name, item.category);
+          const url = this.getRlgUrl(name, item.category);
           if (url) {
             const imageUri = await this.scrapeRlgImage(url);
             this.thumbnailsMap[nameLower] = imageUri || '';
             if (imageUri) {
               resolved++;
-              this.emit('thumbnail-resolved', { name: item.name, image: imageUri });
+              this.emit('thumbnail-resolved', { name: name, image: imageUri });
             }
           } else {
             this.thumbnailsMap[nameLower] = '';
@@ -771,7 +777,7 @@ class SwapEngine extends EventEmitter {
         processed++;
         const progress = Math.round((processed / total) * 100);
         if (onProgress && processed % 5 === 0) {
-          onProgress({ phase: 'thumbnails', progress, resolved, total, current: item.name });
+          onProgress({ phase: 'thumbnails', progress, resolved, total, current: name });
         }
       }
     };
