@@ -7,9 +7,9 @@ let catalog = [];
 let currentSearch = '';
 let currentCategory = 'All';
 let searchTimeout = null;
-let currentLimit = 40;
+let currentLimit = 48;
 let hasMore = true;
-const CATALOG_PAGE = 40;
+const CATALOG_PAGE = 48;
 
 
 
@@ -121,16 +121,17 @@ document.querySelectorAll('.nav-item').forEach(btn => {
 
 async function updateMissingItemsBadge() {
   try {
-    const count = await rc.checkNewLocalItems();
+    const info = await rc.getMissingThumbnailsInfo();
     const popup = document.getElementById('swaps-refresh-popup');
     const badgeText = document.getElementById('missing-count');
-    if (popup && badgeText) {
-      if (count > 0) {
-        badgeText.textContent = count;
-        popup.style.display = 'block';
-      } else {
-        popup.style.display = 'none';
-      }
+    const btn = document.getElementById('btn-swaps-refresh');
+    if (info && info.missingCount > 0) {
+      if (badgeText) badgeText.textContent = info.missingCount;
+      if (popup) popup.style.display = 'block';
+      if (btn) btn.classList.add('pulse');
+    } else {
+      if (popup) popup.style.display = 'none';
+      if (btn) btn.classList.remove('pulse');
     }
   } catch (err) {
     rc?.logError?.(`Errore nel controllo dei nuovi oggetti: ${err.message}`);
@@ -276,6 +277,19 @@ async function fetchAndRenderCatalog(resetLimit = false) {
     hasMore = items.length > currentLimit;
     const newItems = items.slice(0, currentLimit);
     catalog = newItems;
+
+    const countText = document.getElementById('swaps-count-text');
+    if (countText) {
+      rc.getMissingThumbnailsInfo().then(info => {
+        if (info && info.totalCatalog) {
+          countText.textContent = `${catalog.length.toLocaleString('it-IT')} di ${info.totalCatalog.toLocaleString('it-IT')}`;
+        } else {
+          countText.textContent = `${catalog.length}`;
+        }
+      }).catch(() => {
+        countText.textContent = `${catalog.length}`;
+      });
+    }
 
     const existingBtn = document.getElementById('catalog-load-more');
     if (existingBtn) existingBtn.remove();
