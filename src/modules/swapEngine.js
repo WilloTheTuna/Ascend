@@ -813,6 +813,21 @@ class SwapEngine extends EventEmitter {
     }
   }
 
+  isThumbnailPresent(name, category) {
+    if (!this.thumbnailsMap) return false;
+    const key = name.toLowerCase();
+    if (this.thumbnailsMap[key] !== undefined && this.thumbnailsMap[key] !== '') return true;
+
+    // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
+    if (category === 'Decals' && name.includes(':')) {
+      const decalName = name.split(':')[1].trim().toLowerCase();
+      if (this.thumbnailsMap[decalName] !== undefined && this.thumbnailsMap[decalName] !== '') {
+        return true;
+      }
+    }
+    return false;
+  }
+
   getMissingThumbnailsInfo() {
     this.scanLocalCookedPCForNewItems();
     if (!this.thumbnailsMap) this.thumbnailsMap = {};
@@ -823,8 +838,7 @@ class SwapEngine extends EventEmitter {
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
       const name = this.getRealItemName(item);
-      const key = name.toLowerCase();
-      if (this.thumbnailsMap[key] !== undefined) {
+      if (this.isThumbnailPresent(name, item.category)) {
         downloadedCount++;
       } else {
         missing.push(item);
@@ -848,8 +862,7 @@ class SwapEngine extends EventEmitter {
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
       const name = this.getRealItemName(item);
-      const key = name.toLowerCase();
-      return this.thumbnailsMap[key] === undefined;
+      return !this.isThumbnailPresent(name, item.category);
     });
 
     const total = missing.length;
@@ -872,8 +885,7 @@ class SwapEngine extends EventEmitter {
         const item = queue.shift();
         if (!item) break;
         const name = this.getRealItemName(item);
-        const nameLower = name.toLowerCase();
-        if (this.thumbnailsMap[nameLower] !== undefined) {
+        if (this.isThumbnailPresent(name, item.category)) {
           processed++;
           continue;
         }
