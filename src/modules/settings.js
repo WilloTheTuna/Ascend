@@ -23,12 +23,12 @@ const DEFAULTS = {
     overlayPos: { x: 1650, y: 39 }
   },
   rocketStatsTheme: 'Circle',
-  rocketStatsScaleMultiplier: 0.78,
-  rocketStatsOffsetX: 28,
-  rocketStatsOffsetY: 79,
+  rocketStatsScaleMultiplier: 0.7,
+  rocketStatsOffsetX: 29,
+  rocketStatsOffsetY: 78,
   rocketStatsPlaylist: 'current',
   rocketStatsShowMmrDelta: true,
-  rocketStatsUiScalePercent: 100,
+  rocketStatsUiScalePercent: 90,
   
   // IngameRank configuration defaults (calibrated)
   ingameRankEnabled: true,
@@ -41,14 +41,14 @@ const DEFAULTS = {
   ingameRankHoldToShow: true,
   ingameRankHotkey: 'Tab',
   ingameRankControllerButton: 32, // Back button (Scoreboard default on controller)
-  ingameRankScaleMultiplier: 1.03,
+  ingameRankScaleMultiplier: 0.93,
   ingameRankOffsetX: -60,
   ingameRankOffsetY: 0,
   ingameRankOffsetXBlue: 0,
-  ingameRankOffsetYBlue: 0,
+  ingameRankOffsetYBlue: 3,
   ingameRankOffsetXOrange: 0,
-  ingameRankOffsetYOrange: 0,
-  ingameRankUiScalePercent: 100
+  ingameRankOffsetYOrange: -2,
+  ingameRankUiScalePercent: 90
 };
 
 class SettingsManager {
@@ -62,11 +62,11 @@ class SettingsManager {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
         // Migration: apply calibrated defaults for fields that are missing
-        // or still at the old uncalibrated defaults (scale=1.03, uiScale=100, offsetX=0)
+        // or still at the old uncalibrated defaults
         if (saved.ingameRankOffsetX === undefined) saved.ingameRankOffsetX = DEFAULTS.ingameRankOffsetX;
         if (saved.ingameRankOffsetY === undefined) saved.ingameRankOffsetY = DEFAULTS.ingameRankOffsetY;
-        if (saved.ingameRankOffsetYBlue === undefined) saved.ingameRankOffsetYBlue = DEFAULTS.ingameRankOffsetYBlue;
-        if (saved.ingameRankOffsetYOrange === undefined) saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
+        if (saved.ingameRankOffsetYBlue === undefined || saved.ingameRankOffsetYBlue === 0) saved.ingameRankOffsetYBlue = DEFAULTS.ingameRankOffsetYBlue;
+        if (saved.ingameRankOffsetYOrange === undefined || saved.ingameRankOffsetYOrange === 0) saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
         if (saved.ingameRankOffsetXBlue === undefined) saved.ingameRankOffsetXBlue = DEFAULTS.ingameRankOffsetXBlue;
         if (saved.ingameRankOffsetXOrange === undefined) saved.ingameRankOffsetXOrange = DEFAULTS.ingameRankOffsetXOrange;
         if (saved.ingameRankScaleMultiplier === undefined || saved.ingameRankScaleMultiplier === 1.03) {
@@ -74,6 +74,12 @@ class SettingsManager {
         }
         if (saved.ingameRankUiScalePercent === undefined || saved.ingameRankUiScalePercent === 100) {
           saved.ingameRankUiScalePercent = DEFAULTS.ingameRankUiScalePercent;
+        }
+        if (saved.rocketStatsScaleMultiplier === undefined || saved.rocketStatsScaleMultiplier === 0.78) {
+          saved.rocketStatsScaleMultiplier = DEFAULTS.rocketStatsScaleMultiplier;
+        }
+        if (saved.rocketStatsUiScalePercent === undefined || saved.rocketStatsUiScalePercent === 100) {
+          saved.rocketStatsUiScalePercent = DEFAULTS.rocketStatsUiScalePercent;
         }
         if (saved.ingameRankTriggerType === undefined) saved.ingameRankTriggerType = '';
         if (saved.ingameRankTriggerIndex === undefined) saved.ingameRankTriggerIndex = '';
