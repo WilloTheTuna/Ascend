@@ -541,40 +541,43 @@ ipcMain.handle('app-check-update', async () => {
     }
   }
 
-  // Fallback to real GitHub check
+  // Fallback to real GitHub check (includes pre-releases)
   try {
-    const res = await fetch('https://api.github.com/repos/WilloTheTuna/Ascend/releases/latest', {
+    const res = await fetch('https://api.github.com/repos/WilloTheTuna/Ascend/releases', {
       headers: { 'User-Agent': 'Ascend-Updater' }
     });
     if (res.ok) {
-      const release = await res.json();
-      const latestVersion = release.tag_name.replace(/^v/, '');
-      
-      const v1 = latestVersion;
-      const v2 = currentVersion;
-      const parts1 = v1.split('.').map(Number);
-      const parts2 = v2.split('.').map(Number);
-      let isNewer = false;
-      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const p1 = parts1[i] || 0;
-        const p2 = parts2[i] || 0;
-        if (p1 > p2) { isNewer = true; break; }
-        if (p1 < p2) { break; }
-      }
+      const releases = await res.json();
+      if (releases && releases.length > 0) {
+        const release = releases[0];
+        const latestVersion = release.tag_name.replace(/^v/, '');
+        
+        const v1 = latestVersion;
+        const v2 = currentVersion;
+        const parts1 = v1.split('.').map(Number);
+        const parts2 = v2.split('.').map(Number);
+        let isNewer = false;
+        for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+          const p1 = parts1[i] || 0;
+          const p2 = parts2[i] || 0;
+          if (p1 > p2) { isNewer = true; break; }
+          if (p1 < p2) { break; }
+        }
 
-      if (isNewer) {
-        const exeAsset = release.assets.find(a => a.name.endsWith('.exe'));
-        if (exeAsset) {
-          latestUpdateInfo = {
-            version: latestVersion,
-            downloadUrl: exeAsset.browser_download_url
-          };
-          return {
-            hasUpdate: true,
-            version: latestVersion,
-            releaseNotes: release.body || 'Nuova versione di Ascend disponibile.',
-            downloadUrl: exeAsset.browser_download_url
-          };
+        if (isNewer) {
+          const exeAsset = release.assets.find(a => a.name.endsWith('.exe'));
+          if (exeAsset) {
+            latestUpdateInfo = {
+              version: latestVersion,
+              downloadUrl: exeAsset.browser_download_url
+            };
+            return {
+              hasUpdate: true,
+              version: latestVersion,
+              releaseNotes: release.body || 'New version of Ascend available.',
+              downloadUrl: exeAsset.browser_download_url
+            };
+          }
         }
       }
     }
