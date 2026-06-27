@@ -197,12 +197,12 @@ rc.on('catalog-refresh-progress', (data) => {
     fill.style.width = `${data.progress}%`;
     pct.textContent = `${data.progress}%`;
   } else if (data.phase === 'download') {
-    text.textContent = 'Downloading icon database...';
+    text.textContent = 'Downloading item database...';
     fill.style.width = `${data.progress}%`;
     pct.textContent = `${data.progress}%`;
   } else if (data.phase === 'complete') {
     const addedText = data.addedCount > 0 ? ` (+${data.addedCount} new)` : '';
-    text.textContent = `Database updated${addedText}. Downloading missing icons...`;
+    text.textContent = `Database updated${addedText}. Downloading missing items...`;
     fill.style.width = '100%';
     pct.textContent = '100%';
     filterAndRender();
@@ -214,20 +214,20 @@ rc.on('catalog-refresh-progress', (data) => {
       try {
         await rc.downloadMissingThumbnails();
       } catch (e) {
-        text.textContent = `Icon download error: ${e.message}`;
+        text.textContent = `Item download error: ${e.message}`;
         if (btn) btn.disabled = false;
         setTimeout(() => { bar.style.display = 'none'; }, 4000);
       }
     }, 800);
   } else if (data.phase === 'thumbnails') {
-    const label = data.current ? `Downloading: ${data.current}` : 'Downloading icons...';
+    const label = data.current ? `Downloading: ${data.current}` : 'Downloading items...';
     text.textContent = `${label} (${data.resolved}/${data.total})`;
     fill.style.width = `${data.progress}%`;
     pct.textContent = `${data.progress}%`;
   } else if (data.phase === 'thumbnails-complete') {
     const msg = data.total === 0
-      ? 'All icons up to date!'
-      : `Downloaded ${data.resolved}/${data.total} icons!`;
+      ? 'All items up to date!'
+      : `Downloaded ${data.resolved}/${data.total} items!`;
     text.textContent = msg;
     fill.style.width = '100%';
     pct.textContent = '100%';
