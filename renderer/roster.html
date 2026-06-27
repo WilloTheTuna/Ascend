@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>IngameRank</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      background: transparent !important;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    #root {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.15s ease 0.15s, visibility 0s 0.30s;
+      will-change: opacity;
+      pointer-events: none;
+    }
+    #root.visible {
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.12s ease;
+    }
+
+    /* Absolute positioned row container */
+    .ir-player-row {
+      position: absolute;
+      width: 400px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    /* Rank Tier Icon */
+    .ir-tier-icon {
+      position: absolute;
+      object-fit: contain;
+    }
+
+    /* Playlist Icon */
+    .ir-playlist-icon {
+      position: absolute;
+      object-fit: contain;
+    }
+
+    /* Division dots container */
+    .ir-divdots {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .ir-divdot {
+      object-fit: contain;
+      display: block;
+    }
+
+    .ir-mmr-text {
+      position: absolute;
+      top: 0;
+      font-family: 'Rajdhani', 'Exo 2', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 1);
+      text-shadow:
+        0 0 30px rgba(255, 255, 255, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+      opacity: 0.8;
+    }
+
+    /* ════════════════════════════════════════════════════════════
+       PREVIEW MODE (when Rocket League is not running)
+       Renders a mock scoreboard row so user can adjust offsets
+    ════════════════════════════════════════════════════════════ */
+    .preview-box {
+      position: absolute;
+      background: rgba(8, 12, 20, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding-left: 64px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      transition: border-color 0.2s;
+    }
+    .preview-box.team-blue {
+      border-left: 5px solid #2563eb;
+    }
+    .preview-box.team-orange {
+      border-left: 5px solid #ea580c;
+    }
+    .preview-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-left: 12px;
+    }
+    .preview-name {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+      white-space: nowrap;
+    }
+    .preview-rank {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-weight: 500;
+      color: rgba(255,255,255,0.45);
+      margin-top: 1px;
+    }
+    .preview-mmr {
+      margin-left: auto;
+      margin-right: 16px;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-weight: 800;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    }
+    .preview-local-badge {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      font-size: 8px;
+      font-weight: 800;
+      background: #2563eb;
+      color: #fff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    /* Rank colors for MMR text by tier */
+    .rc0  { color: rgba(255,255,255,0.4); }
+    .rc1,.rc2,.rc3   { color: #cd7f32; }
+    .rc4,.rc5,.rc6   { color: #c0c0c0; }
+    .rc7,.rc8,.rc9   { color: #f5c518; }
+    .rc10,.rc11,.rc12{ color: #4fc3f7; }
+    .rc13,.rc14,.rc15{ color: #5c9fe0; }
+    .rc16,.rc17,.rc18{ color: #c97dff; }
+    .rc19,.rc20,.rc21{ color: #ff6ec7; }
+    .rc22            { color: #ff7043; }
+
+    #no-data {
+      display: none;
+    }
+
+    /* ── No-match idle message ────────────────────────────────────── */
+    #no-match-msg {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      text-align: center;
+      z-index: 9999;
+    }
+    #no-match-msg .nm-text {
+      font-family: 'Rajdhani', 'Exo 2', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif;
+      font-weight: 800;
+      font-size: 28px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 1);
+      text-shadow:
+        0 0 30px rgba(255, 255, 255, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.8);
+      white-space: nowrap;
+    }
+    #no-match-msg .nm-sub {
+      font-family: 'Rajdhani', 'Exo 2', 'Barlow Condensed', 'Segoe UI', Arial, sans-serif;
+      font-weight: 600;
+      font-size: 12px;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 6px;
+    }
+  </style>
+  <!-- Rocket League-style condensed font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Exo+2:wght@700;800&display=swap">
+</head>
+<body>
+
+<div id="root">
+  <div id="rows-container"></div>
+  <div id="no-data"></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// CONSTANTS (from ScoreboardPosition.h and original mod)
+// ═══════════════════════════════════════════════════════════
+const SCOREBOARD_HEIGHT = 548;
+const SCOREBOARD_WIDTH  = 1033;
+const IMAGE_SCALE       = 0.48;
+const SCOREBOARD_LEFT   = 537;
+const IMAGE_WIDTH       = 150;
+const Y_OFFCENTER       = 32;
+const BLUE_BOTTOM       = 61;
+const ORANGE_TOP        = 43;
+const BANNER_DIST       = 57;
+const IMBALANCE_SHIFT   = 3;
+const SKIP_TICK_SHIFT   = 9;
+
+// Playlist mapping
+const PLAYLIST_ORDER = [ -1, 0, 10, 11, 13, 61, 27, 28, 29, 30, 63, 34 ];
+
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+let ingameRankBase = '';
+let isVisible      = false;
+let optShowDiv     = false;
+let optShowPl      = true;
+let optHoldToShow  = true;
+let optOffsetX     = 0;
+let optOffsetY     = 0;
+let optScale       = 1.0;
+let optOffsetXBlue = 0;
+let optOffsetYBlue = 0;
+let optOffsetXOrange = 0;
+let optOffsetYOrange = 0;
+let optEnabled      = true;
+
+let currentPlayers  = [];
+let optPlaylist     = 'current';
+let matchPlaylist   = '2v2';
+let inMatch         = false;
+let isReplaying     = false;
+let isNoMatch       = true;  // true when not in a real match
+let forcePreview    = false; // true when settings are open to show mock preview
+
+// ═══════════════════════════════════════════════════════════
+// ASSET PATHS
+// ═══════════════════════════════════════════════════════════
+const tierPath = (t) => ingameRankBase ? `${ingameRankBase}/Tiers/${t}.png` : '';
+const divPath  = (g) => ingameRankBase ? `${ingameRankBase}/Divisions/${g}.png` : '';
+const playlistPath = (idx) => ingameRankBase ? `${ingameRankBase}/Playlists/${idx}.png` : '';
+
+// Division group from tier (1–7): matches (tier-1)/3+1 from Render.cpp
+const divGroup = (t) => (t <= 0 || t >= 22) ? 0 : Math.floor((t-1)/3)+1;
+
+// Parse "Division III" → 2 (0-indexed)
+function parseDivision(divisionName, rawDivision) {
+  if (rawDivision !== undefined && rawDivision !== null && !isNaN(rawDivision)) {
+    const d = parseInt(rawDivision);
+    if (d >= 0 && d <= 3) return d;
+    if (d >= 1 && d <= 4) return d - 1;
+  }
+  if (!divisionName) return -1;
+  const s = divisionName.toLowerCase();
+  if (s.includes('iv') || s === '4') return 3;
+  if (s.includes('iii') || s === '3') return 2;
+  if (s.includes('ii') || s === '2') return 1;
+  if (s.includes('i') || s === '1') return 0;
+  return -1;
+}
+
+// ═══════════════════════════════════════════════════════════
+// MOCK DATA FOR PREVIEW MODE
+// ═══════════════════════════════════════════════════════════
+const MOCK_PLAYERS = [
+  { name: 'wrc090909', playerId: 'mock_local', team: 0, score: 350, mmr: 1082, tier: 16, division: 0, rankName: 'Champion I', divisionName: '', isLocal: true, playlistId: 1 },
+  { name: 'dan04LIVO', playerId: 'mock_b1', team: 0, score: 280, mmr: 1115, tier: 16, division: 1, rankName: 'Champion I', divisionName: 'Division II', playlistId: 1 },
+  { name: 'CMYSTERY', playerId: 'mock_o1', team: 1, score: 410, mmr: 1004, tier: 15, division: 0, rankName: 'Diamond III', divisionName: '', playlistId: 1 },
+  { name: 'Muckkky', playerId: 'mock_o2', team: 1, score: 300, mmr: 890, tier: 13, division: 3, rankName: 'Diamond I', divisionName: 'Division IV', playlistId: 1 }
+];
+
+// ═══════════════════════════════════════════════════════════
+// COORDINATES CALCULATIONS (ScoreboardPosition.cpp math)
+// ═══════════════════════════════════════════════════════════
+function getPositions(numBlues, numOranges, isReplayingActive) {
+  const sw = window.innerWidth;
+  const sh = window.innerHeight;
+
+  const aspect = sw / sh;
+  const baseScale = aspect > 1.5
+    ? 0.507 * sh / SCOREBOARD_HEIGHT
+    : 0.615 * sw / SCOREBOARD_WIDTH;
+
+  const scale = baseScale * optScale;
+
+  const centerX = sw / 2;
+  const centerY = sh / 2 + Y_OFFCENTER * scale;
+
+  // Imbalance shift Y
+  const team_difference = numBlues - numOranges;
+  const hasEmptyTeam = (numBlues === 0) !== (numOranges === 0);
+  const multiplier = hasEmptyTeam ? (team_difference >= 0 ? 1 : -1) : 0;
+  const imbalanceShiftY = IMBALANCE_SHIFT * (team_difference - multiplier) * scale;
+  
+  const centerWithImbalanceY = centerY + imbalanceShiftY;
+
+  const baseTierX = -SCOREBOARD_LEFT - IMAGE_WIDTH * IMAGE_SCALE;
+  const shiftX = isReplayingActive ? -60 * scale : 0;
+
+  // Y offsets
+  const baseTierYBlue = -BLUE_BOTTOM + (6 * (4 - numBlues)) - BANNER_DIST * numBlues + 9;
+  const baseTierYOrange = ORANGE_TOP;
+
+  const blueLeaderY = centerWithImbalanceY + (baseTierYBlue - 3 + optOffsetY + optOffsetYBlue) * scale;
+  const orangeLeaderY = centerWithImbalanceY + (baseTierYOrange - 3 + optOffsetY + optOffsetYOrange) * scale;
+  
+  const blueTierX = centerX + (baseTierX + 5 + optOffsetX + optOffsetXBlue) * scale + shiftX;
+  const orangeTierX = centerX + (baseTierX + 5 + optOffsetX + optOffsetXOrange) * scale + shiftX;
+  
+  const playerSeparation = BANNER_DIST * scale;
+
+  return {
+    blueTierX,
+    orangeTierX,
+    blueLeaderY,
+    orangeLeaderY,
+    playerSeparation,
+    scale,
+    shiftX
+  };
+}
+
+// ═══════════════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════════════
+function render(roster) {
+  const container = document.getElementById('rows-container');
+  const noData = document.getElementById('no-data');
+  if (!container) return;
+
+  // Always render the HTML overlay as it is the primary interface for RocketCroc.
+  if (false && optEnabled && !forcePreview) {
+    container.innerHTML = '';
+    if (noData) noData.style.display = 'none';
+    return;
+  }
+
+  let activePlayers = [];
+  let isRealMatch = false;
+  let activeReplay = false;
+
+  if (roster && roster.players && roster.players.length > 0 && roster.inMatch) {
+    activePlayers = roster.players;
+    isRealMatch = true;
+    activeReplay = roster.isReplaying || false;
+  } else if (forcePreview) {
+    activePlayers = MOCK_PLAYERS;
+    isRealMatch = true;
+    activeReplay = false;
+  }
+
+  if (!isRealMatch || activePlayers.length === 0) {
+    isNoMatch = true;
+    container.innerHTML = '';
+    noData.style.display = 'none';
+    return;
+  }
+
+  noData.style.display = 'none';
+
+  // Group and sort within each team by Score (descending) to match the in-game scoreboard sorting
+  const sortScoreboard = (a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    if (a.priNum !== b.priNum) {
+      return (a.priNum ?? 999) - (b.priNum ?? 999);
+    }
+    return a.name.localeCompare(b.name);
+  };
+  const blue = activePlayers.filter(p => p.team === 0).sort(sortScoreboard);
+  const orange = activePlayers.filter(p => p.team === 1).sort(sortScoreboard);
+
+  const numBlues = blue.length;
+  const numOranges = orange.length;
+
+  // Calculate coordinates
+  const pos = getPositions(numBlues, numOranges, activeReplay);
+
+  let html = '';
+
+  // Render function helper
+  const drawPlayer = (p, index, teamLeaderY, teamClass) => {
+    const scale = pos.scale;
+    const Y = Math.round(teamLeaderY + pos.playerSeparation * index);
+    const playerTierX = Math.round(teamClass === 'team-blue' ? pos.blueTierX : pos.orangeTierX);
+    const rowW = Math.round(66 * scale);
+    const rowH = Math.round(44 * scale);
+
+    const isBot = p.playerId && p.playerId.startsWith('bot|');
+    if (isBot) {
+      // Draw an empty div at the correct row position to reserve the space on the scoreboard for the bot
+      return `<div class="ir-player-row" style="left: ${playerTierX}px; top: ${Y}px; width: ${rowW}px; height: ${rowH}px;"></div>`;
+    }
+
+    const tier = p.tier ?? 0;
+    const dn = parseDivision(p.divisionName, p.division);
+    const showDiv = optShowDiv && typeof tier === 'number' && tier > 0 && tier < 22 && dn >= 0;
+    
+    // Playlist icon
+    const showPlaylistIcon = optShowPl && (optPlaylist === 'best' || optPlaylist === '0') && typeof tier === 'number' && tier > 0;
+    const plW = Math.round(42 * scale);
+    const plH = Math.round(42 * scale);
+    const plLeft = -Math.round(46 * scale);
+    const plTop = Math.round((rowH - plH) / 2);
+
+    // Tier icon
+    const tierW = rowW;
+    const tierH = rowH;
+
+    // Division dots
+    const divW = Math.round(36 * scale);
+    const divH = Math.round(9 * scale);
+    const divGap = 1; // Fixed 1px gap ensures perfect uniform spacing across all display resolutions
+    const dotsHeight = (4 * divH) + (3 * divGap);
+    const dotsTop = Math.round((rowH - dotsHeight) / 2);
+    const dotsLeft = Math.round(68 * scale);
+
+    let rowHtml = '';
+
+    rowHtml += `<div class="ir-player-row" style="left: ${playerTierX}px; top: ${Y}px; width: ${rowW}px; height: ${rowH}px;">`;
+    
+    // Playlist icon
+    if (showPlaylistIcon && p.playlistId !== undefined) {
+      const PLAYLIST_ID_TO_INDEX = {
+        10: 0, // Solo Duel
+        11: 1, // Doubles
+        13: 2, // Standard
+        27: 3, // Hoops
+        28: 4, // Rumble
+        29: 5, // Dropshot
+        30: 6, // Snow Day
+        34: 7, // Tournaments
+        61: 8, // Quads
+        63: 9  // Heatseeker
+      };
+      const imgIdx = PLAYLIST_ID_TO_INDEX[p.playlistId] !== undefined ? PLAYLIST_ID_TO_INDEX[p.playlistId] : p.playlistId;
+      rowHtml += `<img class="ir-playlist-icon" src="${playlistPath(imgIdx)}" style="left: ${plLeft}px; top: ${plTop}px; width: ${plW}px; height: ${plH}px;" onerror="this.style.display='none'" />`;
+    }
+    
+    // Tier icon (main rank icon)
+    rowHtml += `<img class="ir-tier-icon" src="${tierPath(tier)}" style="left: 0; top: 0; width: ${tierW}px; height: ${tierH}px;" onerror="this.onerror=null; this.src='${tierPath(0)}'" />`;
+    
+    // Unranked small overlay icon (top right corner)
+    if (p.isUnranked) {
+      const overlaySize = Math.round(tierH * 0.42);
+      const overlayW = overlaySize;
+      const overlayH = overlaySize;
+      const overlayLeft = Math.round(tierW - overlayW * 0.85);
+      const overlayTop = -Math.round(overlayH * 0.18);
+      rowHtml += `<img class="ir-unranked-overlay" src="${tierPath('unranked_overlay')}" style="position: absolute; left: ${overlayLeft}px; top: ${overlayTop}px; width: ${overlayW}px; height: ${overlayH}px; z-index: 10; filter: drop-shadow(0 1px 3px rgba(0,0,0,0.95));" />`;
+    }
+    
+    // Division dots/slashes
+    if (showDiv) {
+      const dg = divGroup(tier);
+      const activeImg = divPath(dg);
+      const inactiveImg = divPath(0);
+      
+      rowHtml += `<div class="ir-divdots" style="left: ${dotsLeft}px; top: ${dotsTop}px; width: ${divW}px; height: auto; gap: ${divGap}px;">`;
+      for (let i = 3; i >= 0; i--) {
+        const active = i <= dn;
+        rowHtml += `<img class="ir-divdot" src="${active ? activeImg : inactiveImg}" style="width: ${divW}px; height: ${divH}px;" onerror="this.style.opacity='0'" />`;
+      }
+      rowHtml += `</div>`;
+    }
+    // MMR Text at +480 offset (scaled)
+    const mmrLeft = Math.round(480 * scale) - pos.shiftX;
+    const mmrFontSize = Math.round(26 * scale);
+    const mmrText = p.mmr !== undefined && p.mmr !== null ? p.mmr : '';
+    if (mmrText !== '' && !isBot) {
+      rowHtml += `<div class="ir-mmr-text" style="left: ${mmrLeft}px; font-size: ${mmrFontSize}px; height: ${rowH}px;">${mmrText}</div>`;
+    }
+
+    rowHtml += `</div>`;
+    return rowHtml;
+  };
+
+  // Draw Blue team
+  blue.forEach((p, idx) => {
+    html += drawPlayer(p, idx, pos.blueLeaderY, 'team-blue');
+  });
+
+  // Draw Orange team
+  orange.forEach((p, idx) => {
+    html += drawPlayer(p, idx, pos.orangeLeaderY, 'team-orange');
+  });
+
+  container.innerHTML = html;
+
+  if (!optHoldToShow) showOverlay();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SHOW / HIDE
+// ═══════════════════════════════════════════════════════════
+function showOverlay() {
+  const el = document.getElementById('root');
+  if (!isVisible && el) {
+    isVisible = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('visible')));
+  }
+}
+function hideOverlay() {
+  const el = document.getElementById('root');
+  if (isVisible && el) { isVisible = false; el.classList.remove('visible'); }
+}
+
+// ═══════════════════════════════════════════════════════════
+// APPLY SETTINGS
+// ═══════════════════════════════════════════════════════════
+function applySettings(s) {
+  if (!s) return;
+  optShowDiv   = s.showDivision === true;
+  optShowPl    = s.showPlaylist !== false;
+  optHoldToShow = s.holdToShow !== false;
+  optEnabled   = s.enabled !== false;
+  optScale     = s.scaleMultiplier !== undefined ? s.scaleMultiplier : 1.0;
+  optOffsetX   = s.offsetX !== undefined ? s.offsetX : 0;
+  optOffsetY   = s.offsetY !== undefined ? s.offsetY : 0;
+  optOffsetXBlue = s.offsetXBlue !== undefined ? s.offsetXBlue : 0;
+  optOffsetYBlue = s.offsetYBlue !== undefined ? s.offsetYBlue : 0;
+  optOffsetXOrange = s.offsetXOrange !== undefined ? s.offsetXOrange : 0;
+  optOffsetYOrange = s.offsetYOrange !== undefined ? s.offsetYOrange : 0;
+  optPlaylist  = s.playlist || 'current';
+
+  if (!optHoldToShow) showOverlay();
+  else hideOverlay();
+}
+
+// ═══════════════════════════════════════════════════════════
+// IPC
+// ═══════════════════════════════════════════════════════════
+function bindEvents() {
+  if (window.rc && window.rc.getRosterInit) {
+    window.rc.getRosterInit().then((data) => {
+      if (data) {
+        if (data.ingameRankPath) {
+          ingameRankBase = 'file:///' + encodeURI(data.ingameRankPath.replace(/\\/g, '/')).replace(/#/g, '%23').replace(/\?/g, '%3F');
+        }
+        if (data.settings) applySettings(data.settings);
+        
+        if (data.roster) {
+          inMatch = data.roster.inMatch;
+          isReplaying = data.roster.isReplaying || false;
+          matchPlaylist = data.roster.playlist || '2v2';
+          currentPlayers = data.roster.players || [];
+        } else {
+          inMatch = false;
+          isReplaying = false;
+          matchPlaylist = '2v2';
+          currentPlayers = [];
+        }
+        render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+      }
+    }).catch((err) => {
+      if (window.rc && window.rc.logError) {
+        window.rc.logError('Failed to get initial roster settings: ' + err.message);
+      }
+    });
+  }
+
+  window.rc.on('roster-init', (data) => {
+    if (data.ingameRankPath) {
+      ingameRankBase = 'file:///' + encodeURI(data.ingameRankPath.replace(/\\/g, '/')).replace(/#/g, '%23').replace(/\?/g, '%3F');
+    }
+    if (data.settings) applySettings(data.settings);
+    
+    // Check if we are in real match
+    if (data.roster) {
+      inMatch = data.roster.inMatch;
+      isReplaying = data.roster.isReplaying || false;
+      matchPlaylist = data.roster.playlist || '2v2';
+      currentPlayers = data.roster.players || [];
+    } else {
+      inMatch = false;
+      isReplaying = false;
+      matchPlaylist = '2v2';
+      currentPlayers = [];
+    }
+    render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+  });
+
+  window.rc.on('settings-update', (s) => {
+    applySettings(s);
+    render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+  });
+
+  window.rc.on('roster-update', (data) => {
+    if (data) {
+      inMatch = data.inMatch;
+      isReplaying = data.isReplaying || false;
+      matchPlaylist = data.playlist || '2v2';
+      currentPlayers = data.players || [];
+    } else {
+      inMatch = false;
+      isReplaying = false;
+      matchPlaylist = '2v2';
+      currentPlayers = [];
+    }
+    render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+  });
+
+  window.rc.on('roster-clear', () => {
+    currentPlayers = [];
+    inMatch = false;
+    isReplaying = false;
+    render(null);
+    hideOverlay();
+  });
+
+  window.rc.on('overlay-show', showOverlay);
+  window.rc.on('overlay-hide', hideOverlay);
+  
+  window.rc.on('force-preview', (val) => {
+    forcePreview = val;
+    render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+  });
+  
+  // Resize event
+  window.addEventListener('resize', () => {
+    render({ players: currentPlayers, inMatch, playlist: matchPlaylist, isReplaying });
+  });
+}
+
+function setupIpc() {
+  if (window.rc && window.rc.on) { bindEvents(); return; }
+  const t = setInterval(() => {
+    if (window.rc && window.rc.on) { clearInterval(t); bindEvents(); }
+  }, 20);
+}
+
+setupIpc();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.log
+.gemini/
+scratch/
+update_simulation.json
+installed_version.txt
+.env

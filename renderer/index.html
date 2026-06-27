@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Ascend</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"/>
+<link rel="stylesheet" href="style.css"/>
+<style>
+  /* Hide number input spinners for cleaner input look */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
+</style>
+</head>
+<body>
+<!-- Titlebar -->
+<div class="titlebar" id="titlebar">
+  <div class="titlebar-left">
+    <div class="logo">
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <!-- Background glow -->
+        <circle cx="14" cy="14" r="12" fill="url(#gradBlackHole)" stroke="rgba(191,90,242,0.3)" stroke-width="1"/>
+        <!-- Accretion disk backing -->
+        <ellipse cx="14" cy="14" rx="14" ry="3.5" transform="rotate(-30 14 14)" fill="url(#gradDisk)" />
+        <!-- Event Horizon (black sphere) -->
+        <circle cx="14" cy="14" r="7.5" fill="#000000" stroke="#bf5af2" stroke-width="0.5"/>
+        <!-- Accretion disk front (crosses in front) -->
+        <path d="M 3 20 C 10 16, 18 12, 25 8" stroke="url(#gradDiskFront)" stroke-width="3" stroke-linecap="round" />
+        <defs>
+          <linearGradient id="gradBlackHole" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#0a0518"/>
+            <stop offset="100%" stop-color="#240b36"/>
+          </linearGradient>
+          <linearGradient id="gradDisk" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#bf5af2" stop-opacity="0.8"/>
+            <stop offset="100%" stop-color="#8e2de2" stop-opacity="0.1"/>
+          </linearGradient>
+          <linearGradient id="gradDiskFront" x1="3" y1="20" x2="25" y2="8" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#bf5af2"/>
+            <stop offset="50%" stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#8e2de2"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+    <span class="app-name">Ascend</span>
+    <span class="app-version">v1.0</span>
+  </div>
+  <div class="titlebar-right">
+    <button class="titlebar-btn update" id="btn-update" title="Gestione Aggiornamenti" style="position: relative;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+      <span class="update-badge" id="update-badge" style="display: none; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; background-color: var(--accent); border-radius: 50%; box-shadow: 0 0 6px var(--accent);"></span>
+    </button>
+    <button class="titlebar-btn" id="btn-overlay" title="Toggle Overlay">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><rect x="1" y="1" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M4 7h6M7 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+    </button>
+    <button class="titlebar-btn minimize" id="btn-minimize" title="Minimize">
+      <svg width="10" height="1" viewBox="0 0 10 1" fill="none"><rect width="10" height="1" fill="currentColor"/></svg>
+    </button>
+    <button class="titlebar-btn maximize" id="btn-maximize" title="Maximize">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="1" width="8" height="8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+    </button>
+    <button class="titlebar-btn close"    id="btn-close"    title="Close">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 1.5l7 7M8.5 1.5l-7 7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Layout -->
+<div class="app-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <nav class="nav">
+      <button class="nav-item active" data-tab="swaps">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9h12M9 3l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Swaps</span>
+      </button>
+      <button class="nav-item" data-tab="ball">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M2 9h14M9 2c-2.5 2-4 4.5-4 7s1.5 5 4 7" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span>Ball</span>
+      </button>
+      <button class="nav-item" data-tab="decal">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M6 8h6M6 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Decals</span>
+      </button>
+      <button class="nav-item" data-tab="hud">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 15L9 3l6 12H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>HUD</span>
+      </button>
+      <button class="nav-item" data-tab="presets">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M14 2H4a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V4a2 2 0 00-2-2z" stroke="currentColor" stroke-width="1.5"/><path d="M6 9h6M6 12h4M6 6h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Presets</span>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" data-tab="workshop">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2l2 5h5l-4 3 1.5 5L9 12l-4.5 3L6 10 2 7h5L9 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span>Workshop</span>
+      </button>
+      <button class="nav-item" data-tab="tracker">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 12l3-4 3 2 3-5 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="9" cy="9" r="7" stroke="currentColor" stroke-width="1.5"/></svg>
+        <span>Tracker</span>
+      </button>
+      <button class="nav-item" data-tab="plugins">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M12 2v4M6 2v4M3 8h12M5 14h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Plugins</span>
+      </button>
+      <div class="nav-divider"></div>
+      <button class="nav-item" data-tab="settings">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M9 2v1.5M9 14.5V16M2 9h1.5M14.5 9H16M4.1 4.1l1.1 1.1M12.8 12.8l1.1 1.1M4.1 13.9l1.1-1.1M12.8 5.2l1.1-1.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <!-- Status bar -->
+    <div class="status-bar">
+      <div class="status-dot" id="eac-dot"></div>
+      <span class="status-label" id="eac-label">EAC Safe</span>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <main class="content">
+    <!-- SWAPS TAB -->
+    <div class="tab active" id="tab-swaps">
+      <div class="tab-header">
+        <h1>Cosmetic Swaps</h1>
+        <p class="tab-desc">Swap game files on disk — fully EAC compatible</p>
+      </div>
+
+
+      <div class="swaps-filter-bar" style="display: flex; gap: 8px; width: 100%;">
+        <input class="input" id="swaps-search-input" placeholder="Search cosmetics..." style="flex: 1;"/>
+        <select class="select" id="swaps-category-select" style="width: auto;">
+          <option value="All">All Categories</option>
+          <option value="Anthems">Anthems</option>
+          <option value="Antennas">Antennas</option>
+          <option value="AvatarBorders">Avatar Borders</option>
+          <option value="Bodies">Bodies</option>
+          <option value="Decals">Decals</option>
+          <option value="Boosts">Boosts</option>
+          <option value="EngineSounds">Engine Sounds</option>
+          <option value="GoalExplosions">Goal Explosions</option>
+          <option value="Toppers">Toppers</option>
+          <option value="PaintFinishes">Paint Finishes</option>
+          <option value="PlayerBanners">Player Banners</option>
+          <option value="Trails">Trails</option>
+          <option value="Wheels">Wheels</option>
+        </select>
+        <div style="position: relative; display: flex;">
+          <button class="btn btn-ghost" id="btn-swaps-refresh" title="Aggiorna catalogo e controlla download" style="white-space: nowrap; display: flex; align-items: center; gap: 6px; padding: 0 16px;">
+            🔄 Aggiorna
+          </button>
+          <div id="swaps-refresh-popup">
+            Mancano <span id="missing-count">0</span> oggetti!
+          </div>
+        </div>
+      </div>
+
+      <!-- Download progress bar -->
+      <div id="swaps-download-progress-bar" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; margin-top:8px; margin-bottom:12px; align-items:center; gap:12px; width: 100%;">
+        <span style="font-size:12px; color:var(--text-muted); white-space:nowrap;" id="swaps-progress-text">Controllo aggiornamenti...</span>
+        <div style="flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; position:relative;">
+          <div id="swaps-progress-fill" style="width:0%; height:100%; background:var(--accent); border-radius:4px; transition:width 0.15s ease;"></div>
+        </div>
+        <span style="font-size:12px; font-weight:700; color:var(--accent); white-space:nowrap;" id="swaps-progress-pct">0%</span>
+      </div>
+
+      <div class="active-swaps-bar" id="active-swaps-bar" style="display:none">
+        <div class="active-swaps-label">
+          <div class="pulse-dot"></div>
+          <span id="active-swaps-count">0 swaps active</span>
+        </div>
+        <div class="active-swaps-list" id="active-swaps-list"></div>
+        <button class="btn btn-danger-sm" id="btn-revert-all">Revert All</button>
+      </div>
+      <div class="catalog-grid" id="catalog-grid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading catalog...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BALL TAB -->
+    <div class="tab" id="tab-ball">
+      <div class="tab-header">
+        <h1>Ball Packs</h1>
+        <p class="tab-desc">Custom ball skins — drag a pack folder to install</p>
+      </div>
+      <div class="drop-zone" id="ball-drop-zone">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><circle cx="20" cy="20" r="18" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><path d="M20 13v14M13 20h14" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/></svg>
+        <p>Drop ball pack folder here</p>
+      </div>
+      <div class="packs-grid" id="ballpacks-grid"></div>
+    </div>
+
+    <!-- DECAL TAB -->
+    <div class="tab" id="tab-decal">
+      <div class="tab-header">
+        <h1>Decal Packs</h1>
+        <p class="tab-desc">Custom car decals</p>
+      </div>
+      <div class="drop-zone" id="decal-drop-zone">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><rect x="4" y="8" width="32" height="24" rx="4" stroke="rgba(255,255,255,0.2)" stroke-width="2"/><path d="M20 17v6M17 20h6" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/></svg>
+        <p>Drop decal pack folder here</p>
+      </div>
+      <div class="packs-grid" id="decalpacks-grid"></div>
+    </div>
+
+    <!-- HUD TAB -->
+    <div class="tab" id="tab-hud">
+      <div class="tab-header">
+        <h1>HUD Meter Packs</h1>
+        <p class="tab-desc">Custom boost meter skins</p>
+      </div>
+      <div class="drop-zone" id="hud-drop-zone">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none"><path d="M10 30L20 10l10 20H10z" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linejoin="round"/><path d="M20 19v4M20 26v1" stroke="rgba(255,255,255,0.4)" stroke-width="2" stroke-linecap="round"/></svg>
+        <p>Drop HUD meter pack folder here</p>
+      </div>
+      <div class="packs-grid" id="hudpacks-grid"></div>
+    </div>
+
+    <!-- PRESETS TAB -->
+    <div class="tab" id="tab-presets">
+      <div class="tab-header">
+        <h1>Presets</h1>
+        <p class="tab-desc">Save and load your cosmetic configurations</p>
+      </div>
+      <div class="preset-actions">
+        <input class="input" id="preset-name-input" placeholder="New preset name..." maxlength="32"/>
+        <button class="btn btn-primary" id="btn-save-preset">Save Current</button>
+      </div>
+      <div class="presets-list" id="presets-list"></div>
+    </div>
+
+    <!-- WORKSHOP TAB -->
+    <div class="tab" id="tab-workshop">
+      <div class="tab-header">
+        <div class="workshop-title-row">
+          <div>
+            <h1>Workshop Maps</h1>
+            <p class="tab-desc">Install and play custom maps</p>
+          </div>
+          <div class="workshop-header-actions" style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" id="btn-workshop-import" style="font-size: 11.5px; padding: 6px 12px;">Importa Mappa (.zip, .udk, .upk)</button>
+            <button class="btn btn-danger-sm" id="btn-workshop-restore" style="display:none">Ripristina Tutti</button>
+            <button class="btn btn-ghost btn-sm" id="btn-workshop-refresh">Refresh</button>
+          </div>
+        </div>
+        <div class="workshop-status-grid" id="workshop-status-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 20px; width: 100%;">
+          <!-- Rendered dynamically in app.js -->
+        </div>
+      </div>
+
+
+
+
+      <div class="workshop-controls-bar">
+        <div class="search-wrapper">
+          <input class="input" id="workshop-search-input" placeholder="Search by name or author..."/>
+        </div>
+        <button class="btn btn-ghost" id="btn-workshop-sort" data-sort="downloads">Most Downloaded</button>
+        <label class="checkbox-container">
+          <input type="checkbox" id="workshop-local-toggle"/>
+          <span class="checkmark"></span>
+          <span class="label-text">Downloaded only</span>
+        </label>
+        <span class="maps-count-label" id="workshop-maps-count">0 maps</span>
+      </div>
+
+      <!-- Top Pagination -->
+      <div class="pagination-bar workshop-pagination" id="workshop-pagination-top" style="display:none; margin-top:0; margin-bottom:12px; padding:10px 0; border-top:none; border-bottom:1px solid var(--glass-border)">
+        <button class="btn btn-ghost btn-sm btn-workshop-prev">← Previous</button>
+        <span class="pagination-info workshop-page-info">Page 1 of 1</span>
+        <button class="btn btn-ghost btn-sm btn-workshop-next">Next →</button>
+      </div>
+
+      <div class="maps-grid" id="maps-grid">
+        <div class="empty-state">
+          <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M24 6l4 10h10l-8 6 3 10-9-6-9 6 3-10-8-6h10L24 6z" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linejoin="round"/></svg>
+          <p>Loading maps...</p>
+        </div>
+      </div>
+
+      <!-- Bottom Pagination -->
+      <div class="pagination-bar workshop-pagination" id="workshop-pagination-bottom" style="display:none">
+        <button class="btn btn-ghost btn-sm btn-workshop-prev">← Previous</button>
+        <span class="pagination-info workshop-page-info">Page 1 of 1</span>
+        <button class="btn btn-ghost btn-sm btn-workshop-next">Next →</button>
+      </div>
+    </div>
+
+    <!-- TRACKER TAB -->
+    <div class="tab" id="tab-tracker">
+      <div class="tab-header">
+        <h1>MMR Tracker</h1>
+        <p class="tab-desc">Live rank tracking via tracker.gg</p>
+      </div>
+      <div class="tracker-setup" id="tracker-setup">
+        <div class="setup-card" style="max-width: 480px; width: 100%;">
+          <h3>Connect your accounts</h3>
+          <div id="tracker-usernames-container" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; width: 100%;">
+            <!-- Rendered dynamically -->
+          </div>
+          <div style="display: flex; gap: 8px; margin-bottom: 16px; width: 100%;">
+            <button class="btn btn-ghost btn-sm" id="btn-tracker-add-field" style="flex: 1; font-weight: 600;">➕ Aggiungi Account</button>
+          </div>
+          <button class="btn btn-primary" id="btn-tracker-connect" style="width: 100%;">Connect</button>
+          <div class="setup-hint" id="local-login-hint" style="display: none; margin-top: 14px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.5);">
+            Profilo rilevato dal gioco: <span id="detected-username" style="color: #bf5af2; font-weight: 600;"></span>
+            <button class="btn btn-ghost btn-sm" id="btn-use-detected" style="margin-left: 8px; font-size: 11px; padding: 2px 6px;">Usa questo</button>
+          </div>
+        </div>
+      </div>
+      <div class="tracker-dashboard" id="tracker-dashboard" style="display:none">
+        <div class="dashboard-header-row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <div class="tracker-profile-card" id="tracker-profile-card" style="margin-bottom: 0;">
+            <div class="profile-avatar" id="profile-avatar"></div>
+            <div class="division-indicator" id="profile-division-indicator" style="display: none;">
+              <div class="div-bar"></div>
+              <div class="div-bar"></div>
+              <div class="div-bar"></div>
+              <div class="div-bar"></div>
+            </div>
+            <div class="profile-info">
+              <span class="profile-name" id="profile-name"></span>
+              <span class="profile-platform" id="profile-platform">Epic Games</span>
+            </div>
+          </div>
+          <div class="account-switcher" id="account-switcher" style="display: flex; gap: 8px; align-items: center;">
+            <div id="account-buttons-container" style="display: flex; gap: 8px; align-items: center;"></div>
+            <button class="btn btn-ghost btn-sm" id="btn-tracker-edit" title="Modifica Account" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+            </button>
+            <button class="btn btn-danger" id="btn-tracker-reset-stats" title="Reset Session Stats" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="btn-roster-toggle" title="Toggle Roster Overlay (IngameRank)" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px; border: 1px solid rgba(120,180,255,0.25); color: rgba(120,180,255,0.8);">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="playlist-selector" id="playlist-selector">
+          <button class="pl-btn" data-pl="current" title="Rileva automaticamente la playlist corrente">Current 🎮</button>
+          <button class="pl-btn" data-pl="best">Best 🏆</button>
+          <button class="pl-btn active" data-pl="1v1">1v1</button>
+          <button class="pl-btn" data-pl="2v2">2v2</button>
+          <button class="pl-btn" data-pl="3v3">3v3</button>
+          <button class="pl-btn" data-pl="rumble">Rumble</button>
+          <button class="pl-btn" data-pl="hoops">Hoops</button>
+          <button class="pl-btn" data-pl="dropshot">Dropshot</button>
+          <button class="pl-btn" data-pl="tournament">Tournament 🏆</button>
+        </div>
+
+        <div class="mmr-cards">
+          <div class="mmr-card main">
+            <span class="mmr-label">Current MMR</span>
+            <span class="mmr-value" id="mmr-current">—</span>
+          </div>
+          <div class="mmr-card">
+            <span class="mmr-label">Session Δ</span>
+            <span class="mmr-value delta" id="mmr-delta">—</span>
+          </div>
+          <div class="mmr-card">
+            <span class="mmr-label">W / L</span>
+            <span class="mmr-value" id="wl-display">0 / 0</span>
+          </div>
+          <div class="mmr-card">
+            <span class="mmr-label">Streak</span>
+            <span class="mmr-value" id="streak-display">—</span>
+          </div>
+        </div>
+
+        <div class="in-match-banner" id="in-match-banner" style="display:none">
+          <div class="pulse-dot green"></div>
+          <span>In match</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLUGINS TAB -->
+    <div class="tab" id="tab-plugins">
+      <div class="tab-header">
+        <h1>Plugins</h1>
+        <p class="tab-desc">Manage BakkesMod C++ plugins</p>
+      </div>
+
+      <!-- Global UI Scale -->
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 18px; margin-bottom:16px; display:flex; align-items:center; gap:14px;">
+        <span style="font-size:13px; font-weight:600; color:var(--text-muted); white-space:nowrap;">Scala UI Rocket League</span>
+        <input type="range" id="global-uiscale-slider" min="50" max="100" step="1" value="100" style="flex:1; accent-color:#6366f1;">
+        <input type="number" id="global-uiscale-input" min="50" max="100" value="100" style="width:54px; text-align:center; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:6px; color:#fff; padding:4px 6px; font-size:13px;">
+        <span style="font-size:13px; color:var(--text-muted);">%</span>
+      </div>
+
+      <!-- BakkesMod Plugins Section -->
+      <div class="plugins-section" id="section-plugins-bm" style="display:block">
+        <div class="bakkes-install-bar" style="display: flex; gap: 8px;">
+          <input class="input" id="bakkes-plugin-path-input" placeholder="Paste ZIP path or drag a BakkesMod .zip plugin..." style="flex: 1;"/>
+          <button class="btn btn-primary" id="btn-install-bakkes-plugin">Install</button>
+        </div>
+        <div class="plugins-list" id="bakkes-plugins-list">
+          <div class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none"><path d="M28 4v12M20 4v12M8 20h32M16 40h16a6 6 0 006-6V18a6 6 0 00-6-6H16a6 6 0 00-6 6v16a6 6 0 006 6z" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linecap="round"/></svg>
+            <p>No BakkesMod plugins installed</p>
+            <span>Drag a plugin ZIP file or select a file to install</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab" id="tab-settings">
+      <div class="tab-header">
+        <h1>Settings</h1>
+      </div>
+      <div class="settings-sections">
+        <div class="settings-section">
+          <h3>Game Installation</h3>
+          <div class="setting-row">
+            <label>Platform</label>
+            <select class="select" id="setting-platform">
+              <option value="Epic">Epic Games</option>
+              <option value="Steam">Steam</option>
+            </select>
+          </div>
+          <div class="setting-row">
+            <label>CookedPCConsole Path</label>
+            <div class="path-row">
+              <input class="input" id="setting-cooked-dir" readonly/>
+              <button class="btn btn-sm" id="btn-browse-cooked">Browse</button>
+            </div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Appearance</h3>
+          <div class="setting-row">
+            <label>Overlay Hotkey</label>
+            <input class="input sm" id="setting-hotkey" placeholder="F2" maxlength="6"/>
+          </div>
+          <div class="setting-row">
+            <label>Overlay Style</label>
+            <select class="select" id="setting-overlay-style">
+              <option value="glassmorphism">Glassmorphism</option>
+              <option value="minimal">Minimal</option>
+              <option value="compact">Compact</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3>Danger Zone</h3>
+          <button class="btn btn-danger" id="btn-revert-all-settings">Revert All Swaps</button>
+          <p class="hint">Restores all original game files from backups</p>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-save-settings" style="margin-top:24px">Save Settings</button>
+    </div>
+  </main>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toasts"></div>
+
+<!-- Canary drift modal -->
+<div class="modal-backdrop" id="canary-modal" style="display:none">
+  <div class="modal">
+    <div class="modal-icon warning">⚠️</div>
+    <h2>Game Update Detected</h2>
+    <p>Rocket League updated some modded files. Re-apply your swaps?</p>
+    <div class="modal-actions">
+      <button class="btn btn-primary" id="btn-canary-reapply">Re-apply Swaps</button>
+      <button class="btn btn-ghost" id="btn-canary-dismiss">Dismiss</button>
+    </div>
+  </div>
+</div>
+
+<!-- Slot Selection Modal -->
+<div class="modal-backdrop" id="slot-modal" style="display:none">
+  <div class="modal" style="max-width: 420px; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r); backdrop-filter: var(--glass-blur-sm);">
+    <div class="modal-icon" style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
+    <h2>Seleziona lo Slot</h2>
+    <p style="margin-bottom: 16px;">Scegli lo slot di Rocket Labs in cui caricare questa mappa custom:</p>
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;" id="slot-options-container">
+      <!-- Slot buttons will be added dynamically -->
+    </div>
+    <div class="modal-actions" style="justify-content: flex-end;">
+      <button class="btn btn-ghost btn-sm" id="btn-slot-cancel">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- Map Selection Modal (Open from Slot Card) -->
+<div class="modal-backdrop" id="map-select-modal" style="display:none">
+  <div class="modal" style="max-width: 500px; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r); backdrop-filter: var(--glass-blur-sm); display: flex; flex-direction: column; max-height: 80vh; padding: 0; overflow: hidden;">
+    <div style="padding: 20px 24px 16px 24px; border-bottom: 1px solid var(--glass-border);">
+      <div style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
+      <h2 id="map-select-modal-title" style="margin: 0; font-size: 18px;">Seleziona la mappa da caricare</h2>
+      <p style="margin: 6px 0 0 0; color: var(--text-muted); font-size: 13px;">Scegli una mappa scaricata per rimpiazzare lo slot <strong id="map-select-slot-name" style="color: var(--accent);"></strong></p>
+    </div>
+    
+    <div style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; max-height: 350px;" id="map-select-options-container">
+      <!-- Local maps will be listed here dynamically -->
+    </div>
+    
+    <div class="modal-actions" style="justify-content: flex-end; padding: 16px 24px 20px 24px; border-top: 1px solid var(--glass-border); margin: 0;">
+      <button class="btn btn-ghost btn-sm" id="btn-map-select-cancel">Annulla</button>
+    </div>
+  </div>
+</div>
+
+<!-- PLUGIN SETTINGS MODAL -->
+<div class="modal-backdrop" id="plugin-settings-modal" style="display:none">
+  <div class="modal" style="max-width:700px; width:90vw; text-align:left; background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--r); backdrop-filter:var(--glass-blur-sm);">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <div style="font-size:28px;">⚙️</div>
+      <div>
+        <h2 style="margin:0; font-size:18px;" id="plugin-settings-modal-title">Plugin Settings</h2>
+        <p style="margin:0; color:var(--text-muted); font-size:13px;" id="plugin-settings-modal-subtitle">Configura il plugin</p>
+      </div>
+    </div>
+
+    <!-- RocketStats: selettore tema -->
+    <div id="plugin-settings-rocketstats" style="display:none;">
+      <p style="color:var(--text-muted); font-size:13px; margin-bottom:14px;">Scegli il tema dell'overlay in-game. I temi sono quelli installati nella cartella RocketStats di BakkesMod.</p>
+      <div id="theme-grid" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px,1fr)); gap:12px; max-height:280px; overflow-y:auto; padding-right:4px;"></div>
+
+      <!-- Selettore Playlist dell'Overlay -->
+      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+        <label for="rocketstats-playlist-select" style="font-weight: 600; font-size: 13.5px; color: #fff; display: block; margin-bottom: 8px;">Playlist dell'Overlay</label>
+        <select id="rocketstats-playlist-select" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: #fff; padding: 8px 12px; border-radius: 6px; outline: none; cursor: pointer; font-size: 13px;">
+          <option value="1v1">Solo (1v1)</option>
+          <option value="2v2">Doubles (2v2)</option>
+          <option value="3v3">Standard (3v3)</option>
+          <option value="rumble">Rumble</option>
+          <option value="hoops">Hoops</option>
+          <option value="dropshot">Dropshot</option>
+          <option value="snowday">Snow Day</option>
+          <option value="best">🏆 Best (MMR più alto)</option>
+          <option value="current">🎮 Current (Rileva automaticamente)</option>
+        </select>
+      </div>
+      <!-- Opzione MMR Cumulativo dell'Overlay -->
+      <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <label for="rocketstats-delta-checkbox" style="font-weight: 600; font-size: 13.5px; color: #fff; display: block; cursor: pointer;">Mostra Guadagno MMR (Cumulativo)</label>
+          <span style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Mostra la variazione di MMR della sessione (es. +12, -8) invece del valore totale.</span>
+        </div>
+        <input type="checkbox" id="rocketstats-delta-checkbox" style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
+      </div>
+
+
+      <!-- Scala Interfaccia di Gioco (Rocket League) Slider -->
+      <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <div>
+            <label for="rocketstats-uiscale-slider" style="font-weight: 600; font-size: 13.5px; color: #fff; display: block;">Scala Interfaccia Rocket League</label>
+            <span style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Adatta automaticamente la grandezza e lo spostamento dell'overlay.</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="rocketstats-uiscale-input" min="50" max="100" step="1" style="color: var(--accent); font-weight: 700; font-family: monospace; font-size: 13.5px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); width: 65px; text-align: center; border-radius: 4px; padding: 2px; color: #fff; outline: none;">
+            <span style="color: var(--accent); font-weight: 700; font-size: 13.5px;">%</span>
+          </div>
+        </div>
+        <input type="range" id="rocketstats-uiscale-slider" min="50" max="100" step="1" value="100" style="width: 100%; height: 6px; border-radius: 4px; background: rgba(255,255,255,0.1); outline: none; -webkit-appearance: none; cursor: pointer;">
+      </div>
+
+
+
+
+      <!-- Spostamento X Slider -->
+      <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label for="rocketstats-x-slider" style="font-weight: 600; font-size: 13.5px; color: #fff;">Spostamento Orizzontale (Asse X)</label>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="rocketstats-x-input" min="-2000" max="2000" step="1" style="color: var(--accent); font-weight: 700; font-family: monospace; font-size: 13.5px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); width: 75px; text-align: center; border-radius: 4px; padding: 2px; color: #fff; outline: none;">
+            <span style="color: var(--accent); font-weight: 700; font-size: 13.5px;">px</span>
+          </div>
+        </div>
+        <input type="range" id="rocketstats-x-slider" min="-2000" max="2000" step="1" value="0" style="width: 100%; height: 6px; border-radius: 4px; background: rgba(255,255,255,0.1); outline: none; -webkit-appearance: none; cursor: pointer;">
+      </div>
+
+      <!-- Spostamento Y Slider -->
+      <div style="margin-top: 15px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.05);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <label for="rocketstats-y-slider" style="font-weight: 600; font-size: 13.5px; color: #fff;">Spostamento Verticale (Asse Y)</label>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="rocketstats-y-input" min="-2000" max="2000" step="1" style="color: var(--accent); font-weight: 700; font-family: monospace; font-size: 13.5px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); width: 75px; text-align: center; border-radius: 4px; padding: 2px; color: #fff; outline: none;">
+            <span style="color: var(--accent); font-weight: 700; font-size: 13.5px;">px</span>
+          </div>
+        </div>
+        <input type="range" id="rocketstats-y-slider" min="-2000" max="2000" step="1" value="0" style="width: 100%; height: 6px; border-radius: 4px; background: rgba(255,255,255,0.1); outline: none; -webkit-appearance: none; cursor: pointer;">
+      </div>
+    </div>
+
+    <!-- IngameRank: pannello impostazioni -->
+    <div id="plugin-settings-ingamerank" style="display:none; max-height: 400px; overflow-y: auto; padding-right: 6px;">
+      <p style="color:var(--text-muted); font-size:12.5px; margin-bottom:14px;">Configura le opzioni per la replica dell'overlay IngameRank.</p>
+
+      <!-- Abilita e Hold-to-Show Toggles -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+        <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <label for="ingamerank-enabled-checkbox" style="font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; display: block;">Abilita Overlay</label>
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Attiva il roster overlay</span>
+          </div>
+          <input type="checkbox" id="ingamerank-enabled-checkbox" style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
+          <div>
+            <label for="ingamerank-hold-checkbox" style="font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; display: block;">Hold to Show</label>
+            <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Mostra tenendo premuto</span>
+          </div>
+          <input type="checkbox" id="ingamerank-hold-checkbox" style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
+        </div>
+      </div>
+
+      <!-- Tasti tastiera e controller -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+        <div>
+          <label for="ingamerank-hotkey-select" style="font-weight: 600; font-size: 12px; color: #fff; display: block; margin-bottom: 5px;">Tasto di Attivazione (Tastiera)</label>
+          <select id="ingamerank-hotkey-select" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: 6px; outline: none; cursor: pointer; font-size: 12px;">
+            <option value="Tab">Tab (Scoreboard standard)</option>
+            <option value="F8">F8 (Alternativo)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="ingamerank-controller-select" style="font-weight: 600; font-size: 12px; color: #fff; display: block; margin-bottom: 5px;">Pulsante Controller (Xbox / PS)</label>
+          <select id="ingamerank-controller-select" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: 6px; outline: none; cursor: pointer; font-size: 12px;">
+            <option value="0">Disattivato</option>
+            <option value="32">Back / Share / Select / C1 (Scoreboard)</option>
+            <option value="256">LB (Left Bumper)</option>
+            <option value="512">RB (Right Bumper)</option>
+            <option value="16">Start / Menu</option>
+            <option value="64">L3 (Left Stick Click)</option>
+            <option value="128">R3 (Right Stick Click)</option>
+            <option value="4096">A Button</option>
+            <option value="8192">B Button</option>
+            <option value="16384">X Button</option>
+            <option value="32768">Y Button</option>
+            <option value="1">D-pad Up</option>
+            <option value="2">D-pad Down</option>
+            <option value="4">D-pad Left</option>
+            <option value="8">D-pad Right</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Custom Input (GameSir / Custom mapping) -->
+      <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px;">
+        <span style="font-weight: 600; font-size: 13px; color: #fff; display: block; margin-bottom: 4px;">Custom Input / GameSir (C1, Share, etc.)</span>
+        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 10px;">Configura un tasto o pulsante personalizzato (qualsiasi controller o tastiera).</span>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+          <span id="ingamerank-custom-input-label" style="font-size: 12.5px; font-family: monospace; color: var(--accent); font-weight: 700; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 4px 8px; border-radius: 4px; flex-grow: 1; text-align: center; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Nessun input personalizzato</span>
+          <button class="btn btn-sm" id="ingamerank-btn-record-input" style="padding: 6px 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; color: #fff; transition: all 0.2s; font-size: 12px;">Registra</button>
+          <button class="btn btn-sm btn-danger-sm" id="ingamerank-btn-clear-input" style="padding: 6px 12px; font-size: 12px;">Rimuovi</button>
+        </div>
+      </div>
+
+      <!-- Opzioni Playlist, Divisioni, ExtraModes, Tournaments, Unranked -->
+      <div style="display: grid; grid-template-columns: 1fr; gap: 9px; padding: 10px 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 8px; margin-bottom: 12px;">
+        <!-- Playlist Select (matches PLAYLIST_ORDER in IngameRank.h: -1,0,10,11,13,61,27,28,29,30,63,34) -->
+        <div>
+          <label style="font-weight: 700; font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.08em; text-transform: uppercase; display: block; margin-bottom: 6px;">Playlist</label>
+          <select id="ingamerank-playlist-select" style="width: 100%; background: var(--bg-elevated); border: 1px solid var(--border); color: #fff; padding: 7px 10px; border-radius: 6px; outline: none; cursor: pointer; font-size: 12px;">
+            <option value="current">Current (Rileva in-game)</option>
+            <option value="best">Best (MMR più alto)</option>
+            <option value="1v1">Solo Duel</option>
+            <option value="2v2">Doubles</option>
+            <option value="3v3">Standard</option>
+            <option value="quads">Quads</option>
+            <option value="hoops">Hoops</option>
+            <option value="rumble">Rumble</option>
+            <option value="dropshot">Dropshot</option>
+            <option value="snowday">Snow Day</option>
+            <option value="heatseeker">Heatseeker</option>
+            <option value="tournament">Tournaments</option>
+          </select>
+        </div>
+
+        <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 2px 0;"></div>
+
+        <!-- Checkboxes (matches SettingsGui.cpp) -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="ingamerank-division-checkbox" style="font-size: 12px; color: rgba(255,255,255,0.85); cursor: pointer;">Show Division</label>
+          <input type="checkbox" id="ingamerank-division-checkbox" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="ingamerank-showplaylist-checkbox" style="font-size: 12px; color: rgba(255,255,255,0.85); cursor: pointer;">Show Playlist</label>
+          <input type="checkbox" id="ingamerank-showplaylist-checkbox" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="ingamerank-unranked-checkbox" style="font-size: 12px; color: rgba(255,255,255,0.85); cursor: pointer;">Calculate Unranked Ranks (only Solo, Doubles and Standard)</label>
+          <input type="checkbox" id="ingamerank-unranked-checkbox" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+        </div>
+
+        <div style="height: 1px; background: rgba(255,255,255,0.05); margin: 2px 0;"></div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <label for="ingamerank-extramodes-checkbox" style="font-size: 12px; color: rgba(255,255,255,0.85); cursor: pointer;">Include Extra Modes</label>
+          <input type="checkbox" id="ingamerank-extramodes-checkbox" style="width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer;">
+        </div>
+
+
+
+        <!-- Footer text (identical to original SettingsGui.cpp) -->
+        <div style="margin-top: 6px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06);">
+          <p style="font-size: 11px; color: rgba(255,255,255,0.4); font-family: monospace; line-height: 1.6;">
+            Cycle playlist with "F8" or change it in the console with<br>
+            bind &lt;key&gt; ingamerank_cycleplaylist
+          </p>
+        </div>
+      </div>
+
+      <!-- Scala e Spostamento Offsets -->
+      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+          <label for="ingamerank-uiscale-slider" style="font-weight: 600; font-size: 12.5px; color: #fff;">Scala Interfaccia Rocket League</label>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <input type="number" id="ingamerank-uiscale-input" min="50" max="100" step="1" style="color: var(--accent); font-weight: 700; font-family: monospace; font-size: 12px; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); width: 50px; text-align: center; border-radius: 4px; padding: 2px; color: #fff; outline: none;">
+            <span style="color: var(--accent); font-weight: 700; font-size: 12px;">%</span>
+          </div>
+        </div>
+        <input type="range" id="ingamerank-uiscale-slider" min="50" max="100" step="1" value="100" style="width: 100%; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.1); outline: none; -webkit-appearance: none; cursor: pointer;">
+      </div>
+
+      <div style="margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+            <label for="ingamerank-x-input" style="font-weight: 600; font-size: 11.5px; color: #fff;">Offset Orizzontale X</label>
+            <input type="number" id="ingamerank-x-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 50px; text-align: center; border-radius: 4px; font-size: 11px; color:#fff; outline:none;">
+          </div>
+          <input type="range" id="ingamerank-x-slider" min="-2000" max="2000" step="5" value="0" style="width: 100%; height: 4px; -webkit-appearance: none; background: rgba(255,255,255,0.07); outline: none; cursor: pointer; border-radius: 2px;">
+        </div>
+
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+            <label for="ingamerank-y-input" style="font-weight: 600; font-size: 11.5px; color: #fff;">Offset Verticale Y</label>
+            <input type="number" id="ingamerank-y-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 50px; text-align: center; border-radius: 4px; font-size: 11px; color:#fff; outline:none;">
+          </div>
+          <input type="range" id="ingamerank-y-slider" min="-2000" max="2000" step="5" value="0" style="width: 100%; height: 4px; -webkit-appearance: none; background: rgba(255,255,255,0.07); outline: none; cursor: pointer; border-radius: 2px;">
+        </div>
+      </div>
+
+      <!-- Offset Squadra Blu -->
+      <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
+        <span style="font-size: 11px; font-weight: 700; color: #3b82f6; text-transform: uppercase; letter-spacing: 0.05em;">Squadra Blu (Teammates)</span>
+        <div style="margin-top: 5px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <label for="ingamerank-x-blue-input" style="font-size: 11px; color: rgba(255,255,255,0.7);">Offset X Blu</label>
+              <input type="number" id="ingamerank-x-blue-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 45px; text-align: center; border-radius: 4px; font-size: 10.5px; color:#fff; outline:none; padding:1px;">
+            </div>
+            <input type="range" id="ingamerank-x-blue-slider" min="-500" max="500" step="1" value="0" style="width: 100%; height: 3px; -webkit-appearance: none; background: rgba(59,130,246,0.15); outline: none; cursor: pointer; border-radius: 2px;">
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <label for="ingamerank-y-blue-input" style="font-size: 11px; color: rgba(255,255,255,0.7);">Offset Y Blu</label>
+              <input type="number" id="ingamerank-y-blue-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 45px; text-align: center; border-radius: 4px; font-size: 10.5px; color:#fff; outline:none; padding:1px;">
+            </div>
+            <input type="range" id="ingamerank-y-blue-slider" min="-500" max="500" step="1" value="0" style="width: 100%; height: 3px; -webkit-appearance: none; background: rgba(59,130,246,0.15); outline: none; cursor: pointer; border-radius: 2px;">
+          </div>
+        </div>
+      </div>
+
+      <!-- Offset Squadra Arancione -->
+      <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.05);">
+        <span style="font-size: 11px; font-weight: 700; color: #ea580c; text-transform: uppercase; letter-spacing: 0.05em;">Squadra Arancione (Opponents)</span>
+        <div style="margin-top: 5px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <label for="ingamerank-x-orange-input" style="font-size: 11px; color: rgba(255,255,255,0.7);">Offset X Arancione</label>
+              <input type="number" id="ingamerank-x-orange-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 45px; text-align: center; border-radius: 4px; font-size: 10.5px; color:#fff; outline:none; padding:1px;">
+            </div>
+            <input type="range" id="ingamerank-x-orange-slider" min="-500" max="500" step="1" value="0" style="width: 100%; height: 3px; -webkit-appearance: none; background: rgba(234,88,12,0.15); outline: none; cursor: pointer; border-radius: 2px;">
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+              <label for="ingamerank-y-orange-input" style="font-size: 11px; color: rgba(255,255,255,0.7);">Offset Y Arancione</label>
+              <input type="number" id="ingamerank-y-orange-input" min="-2000" max="2000" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); width: 45px; text-align: center; border-radius: 4px; font-size: 10.5px; color:#fff; outline:none; padding:1px;">
+            </div>
+            <input type="range" id="ingamerank-y-orange-slider" min="-500" max="500" step="1" value="0" style="width: 100%; height: 3px; -webkit-appearance: none; background: rgba(234,88,12,0.15); outline: none; cursor: pointer; border-radius: 2px;">
+          </div>
+        </div>
+      </div>
+    </div>
+    </div>
+
+    <div class="modal-actions" style="justify-content:flex-end; margin-top:20px; gap:8px;">
+      <button class="btn btn-danger-sm" id="btn-rocketstats-reset-stats" title="Azzera Win/Loss/Streak/MMR della sessione corrente" style="margin-right:auto; font-size:12px; padding:6px 14px;">
+        🗑️ Reset Stats
+      </button>
+      <button class="btn btn-ghost btn-sm" id="btn-plugin-settings-close">Chiudi</button>
+    </div>
+  </div>
+</div>
+
+<!-- Custom Swap Modal -->
+<div class="modal-backdrop" id="custom-swap-modal" style="display:none">
+  <div class="modal" style="max-width: 620px; width: 92%; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r-xl); backdrop-filter: var(--glass-blur-sm); padding: 24px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <div style="font-size:28px;">🔄</div>
+      <div>
+        <h2 style="margin:0; font-size:18px;">Crea Swap Personalizzato</h2>
+        <p style="margin:0; color:var(--text-sub); font-size:13px;">Mappa un tuo oggetto standard a un file mod (.upk / .udk) personalizzato</p>
+      </div>
+    </div>
+
+    <!-- Boxes Grid -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+      <!-- Box 1: Item standard che hai -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; position: relative;">
+        <div style="font-weight: 700; color: var(--accent); font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+          <span>📦</span> 1. Item che hai tu (Standard)
+        </div>
+        
+        <div style="position: relative;">
+          <label for="custom-swap-search-catalog" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Cerca nel Catalogo (es. Fennec, OEM, Zomba)</label>
+          <input type="text" id="custom-swap-search-catalog" class="input" placeholder="Scrivi il nome dell'oggetto..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
+          
+          <!-- Search results dropdown -->
+          <div id="custom-swap-catalog-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f121d; border: 1px solid var(--glass-border); border-radius: var(--r-sm); max-height: 160px; overflow-y: auto; z-index: 1000; margin-top: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+
+        <div>
+          <label for="custom-swap-target-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Nome file di gioco (.upk)</label>
+          <input type="text" id="custom-swap-target-input" class="input" value="Body_Octane_SF.upk" placeholder="Esempio: Body_Octane_SF.upk" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
+          <div id="custom-swap-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">Oggetto: Octane (Bodies)</div>
+        </div>
+      </div>
+
+      <!-- Box 2: Item moddato che vuoi -->
+      <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-weight: 700; color: #3b82f6; font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+          <span>🎨</span> 2. Item moddato che vuoi (Custom)
+        </div>
+
+        <div>
+          <label style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Seleziona file mod (.upk / .udk)</label>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-ghost btn-sm" id="btn-custom-swap-browse" style="padding: 8px 12px; font-size: 12px; font-weight: 600;">Sfoglia...</button>
+            <span style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;">Seleziona da PC</span>
+          </div>
+        </div>
+
+        <div>
+          <label for="custom-swap-source-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Percorso file mod</label>
+          <input type="text" id="custom-swap-source-input" class="input" placeholder="Seleziona percorso .upk/.udk" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
+          <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Il file modded personalizzato.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions" style="justify-content: flex-end;">
+      <button class="btn btn-ghost btn-sm" id="btn-custom-swap-cancel">Annulla</button>
+      <button class="btn btn-primary btn-sm" id="btn-custom-swap-apply">Applica Swap</button>
+    </div>
+  </div>
+</div>
+
+<!-- Swap Target Modal -->
+<div class="modal-backdrop" id="swap-target-modal" style="display:none">
+  <div class="modal" style="max-width: 450px; width: 92%; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r-xl); backdrop-filter: var(--glass-blur-sm); padding: 24px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <div style="font-size:28px;">🔄</div>
+      <div>
+        <h2 style="margin:0; font-size:18px;">Crea Swap</h2>
+        <p style="margin:0; color:var(--text-sub); font-size:13px;">Seleziona quale oggetto standard sostituire con <span id="swap-target-source-name" style="font-weight:700; color:#fff;">Item</span></p>
+      </div>
+    </div>
+
+    <!-- Selected Item Preview -->
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--r); margin-bottom: 20px;">
+      <div id="swap-target-source-img" style="width: 48px; height: 48px; border-radius: var(--r-sm); background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); overflow:hidden;">
+        <!-- Image or fallback -->
+      </div>
+      <div>
+        <div id="swap-target-source-label" style="font-weight: 700; font-size: 14px; color: #fff;">Item Name</div>
+        <div id="swap-target-source-category" style="font-size: 11px; color: var(--accent); font-weight: 600;">Category</div>
+      </div>
+    </div>
+
+    <!-- Target Selection -->
+    <div style="margin-bottom: 24px;">
+      <label for="swap-target-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Sostituisci questo oggetto standard in-game:</label>
+      <select id="swap-target-select" class="select" style="width: 100%; font-size: 13px; padding: 10px;"></select>
+      
+      <!-- Option to search custom target from catalog -->
+      <div id="swap-target-custom-file-container" style="display:none; margin-top: 12px; position: relative;">
+        <label for="swap-target-custom-search" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Cerca nel catalogo l'oggetto da sostituire:</label>
+        <input type="text" id="swap-target-custom-search" class="input" placeholder="Scrivi il nome dell'oggetto..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
+        
+        <!-- Search results dropdown -->
+        <div id="swap-target-custom-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f121d; border: 1px solid var(--glass-border); border-radius: var(--r-sm); max-height: 160px; overflow-y: auto; z-index: 1000; margin-top: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
+          <!-- Populated dynamically -->
+        </div>
+
+        <input type="hidden" id="swap-target-custom-file-value" value=""/>
+        <input type="hidden" id="swap-target-custom-label-value" value=""/>
+        
+        <div id="swap-target-custom-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">Nessun oggetto selezionato</div>
+      </div>
+    </div>
+
+    <!-- Paint Selection (Visible for Boosts) -->
+    <div id="swap-target-paint-container" style="display:none; margin-bottom: 20px;">
+      <label for="swap-target-paint-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Colore della vernice (Paint):</label>
+      <select id="swap-target-paint-select" class="select" style="width: 100%; font-size: 13px; padding: 10px;">
+        <option value="none">Nessuno (Default)</option>
+        <option value="titanium_white">Titanium White</option>
+        <option value="grey">Grey</option>
+        <option value="crimson">Crimson</option>
+        <option value="pink">Pink</option>
+        <option value="cobalt">Cobalt</option>
+        <option value="sky_blue">Sky Blue</option>
+        <option value="burnt_sienna">Burnt Sienna</option>
+        <option value="saffron">Saffron</option>
+        <option value="lime">Lime</option>
+        <option value="forest_green">Forest Green</option>
+        <option value="orange">Orange</option>
+        <option value="purple">Purple</option>
+        <option value="gold">Gold</option>
+        <option value="black">Black</option>
+      </select>
+    </div>
+
+    <!-- Actions -->
+    <div class="modal-actions" style="justify-content: flex-end;">
+      <button class="btn btn-ghost btn-sm" id="btn-swap-target-cancel">Annulla</button>
+      <button class="btn btn-primary btn-sm" id="btn-swap-target-apply">Conferma Swap</button>
+    </div>
+  </div>
+</div>
+
+<!-- Update Modal -->
+<div class="modal-backdrop" id="update-modal" style="display:none">
+  <div class="modal" style="max-width: 450px; width: 92%; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r-xl); backdrop-filter: var(--glass-blur-sm); padding: 24px;">
+    <div class="modal-icon" style="margin-bottom: 12px; color: var(--accent);">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+    </div>
+    <h2 style="margin: 0 0 8px 0; font-size: 18px;" id="update-modal-title">Gestione Aggiornamenti</h2>
+    <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.5;" id="update-modal-desc">
+      Verifica la presenza di nuove versioni di Ascend o reinstalla il pacchetto più recente in caso di bug.
+    </p>
+    <div id="update-modal-info" style="display: none; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-sm); margin-bottom: 20px; font-size: 12.5px;">
+      <!-- Dynamic info -->
+    </div>
+    <div class="modal-actions" style="justify-content: flex-end; gap: 8px;">
+      <button class="btn btn-ghost btn-sm" id="btn-update-cancel">Chiudi</button>
+      <button class="btn btn-ghost btn-sm" id="btn-update-reinstall">Reinstalla Recente</button>
+      <button class="btn btn-primary btn-sm" id="btn-update-check">Verifica</button>
+      <button class="btn btn-primary btn-sm" id="btn-update-apply" style="display: none;">Aggiorna Ora</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+
+</body>
+</html>

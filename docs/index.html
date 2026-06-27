@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ascend - EAC-Safe Rocket League Mod Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap">
+  <style>
+    :root {
+      --bg: #03000a;
+      --card-bg: rgba(255, 255, 255, 0.03);
+      --border: rgba(255, 255, 255, 0.08);
+      --accent: #bf5af2;
+      --accent-glow: rgba(191, 90, 242, 0.4);
+      --text: #f5f5f7;
+      --text-sub: #86868b;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 80px;
+    }
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #fff;
+    }
+    .hero {
+      text-align: center;
+      padding: 60px 0;
+      position: relative;
+    }
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, var(--accent-glow) 0%, rgba(0,0,0,0) 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    .hero-logo {
+      margin-bottom: 24px;
+      animation: rotateLogo 25s linear infinite;
+    }
+    @keyframes rotateLogo {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .hero h1 {
+      font-size: 56px;
+      font-weight: 800;
+      letter-spacing: -2px;
+      margin-bottom: 16px;
+      background: linear-gradient(135deg, #fff 0%, #a8a8af 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      font-size: 20px;
+      color: var(--text-sub);
+      max-width: 600px;
+      margin: 0 auto 40px auto;
+      line-height: 1.5;
+    }
+    .btn-download {
+      display: inline-block;
+      background: linear-gradient(135deg, #bf5af2 0%, #8e2de2 100%);
+      color: #white;
+      color: white;
+      text-decoration: none;
+      padding: 16px 36px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 30px;
+      box-shadow: 0 10px 30px var(--accent-glow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .btn-download:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 15px 35px rgba(191, 90, 242, 0.6);
+    }
+    .btn-download:active {
+      transform: translateY(0);
+    }
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-top: 80px;
+    }
+    .feature-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px;
+      backdrop-filter: blur(10px);
+      transition: border-color 0.3s ease;
+    }
+    .feature-card:hover {
+      border-color: rgba(191, 90, 242, 0.4);
+    }
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-sub);
+      line-height: 1.6;
+    }
+    footer {
+      text-align: center;
+      margin-top: 120px;
+      color: var(--text-sub);
+      font-size: 13px;
+      border-top: 1px solid var(--border);
+      padding-top: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo-container">
+        <svg width="32" height="32" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="12" fill="url(#gradBlackHole)" stroke="rgba(191,90,242,0.3)" stroke-width="1"/>
+          <ellipse cx="14" cy="14" rx="14" ry="3.5" transform="rotate(-30 14 14)" fill="url(#gradDisk)" />
+          <circle cx="14" cy="14" r="7.5" fill="#000000" stroke="#bf5af2" stroke-width="0.5"/>
+          <path d="M 3 20 C 10 16, 18 12, 25 8" stroke="url(#gradDiskFront)" stroke-width="3" stroke-linecap="round" />
+          <defs>
+            <linearGradient id="gradBlackHole" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#0a0518"/>
+              <stop offset="100%" stop-color="#240b36"/>
+            </linearGradient>
+            <linearGradient id="gradDisk" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#bf5af2" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#8e2de2" stop-opacity="0.1"/>
+            </linearGradient>
+            <linearGradient id="gradDiskFront" x1="3" y1="20" x2="25" y2="8" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stop-color="#bf5af2"/>
+              <stop offset="50%" stop-color="#ffffff"/>
+              <stop offset="100%" stop-color="#8e2de2"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>ASCEND</span>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="hero-logo">
+        <svg width="120" height="120" viewBox="0 0 28 28" fill="none">
+          <circle cx="14" cy="14" r="12" fill="url(#gradBlackHole)" stroke="rgba(191,90,242,0.3)" stroke-width="2"/>
+          <ellipse cx="14" cy="14" rx="14" ry="3.5" transform="rotate(-30 14 14)" fill="url(#gradDisk)" />
+          <circle cx="14" cy="14" r="7.5" fill="#000000" stroke="#bf5af2" stroke-width="1"/>
+          <path d="M 3 20 C 10 16, 18 12, 25 8" stroke="url(#gradDiskFront)" stroke-width="3" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h1>Ascend</h1>
+      <p>Mod Manager per Rocket League sicuro, invisibile a EAC e con caricamento istantaneo degli overlay in-game.</p>
+      <a href="https://github.com/WilloTheTuna/Ascend/releases/download/v1.0.0/Ascend.Setup.1.0.0.exe" class="btn-download">Scarica Setup (Windows)</a>
+    </section>
+
+    <section class="features">
+      <div class="feature-card">
+        <h3>Cosmetic Swaps</h3>
+        <p>Sostituisci i file delle decalcomanie e delle ruote direttamente sul disco con caricamenti fulminei e ottimizzazioni di cache.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Ingame Ranks</h3>
+        <p>Mostra i rank e gli MMR in tempo reale dei tuoi compagni di squadra e avversari sul tabellone delle statistiche.</p>
+      </div>
+      <div class="feature-card">
+        <h3>Auto-Update Silenzioso</h3>
+        <p>Installa gli aggiornamenti con un solo clic direttamente dall'applicazione grazie al sistema di auto-update integrato.</p>
+      </div>
+    </section>
+
+    <footer>
+      <p>&copy; 2026 Ascend. Sviluppato con amore per Rocket League. Non affiliato con Psyonix o Epic Games.</p>
+    </footer>
+  </div>
+</body>
+</html>

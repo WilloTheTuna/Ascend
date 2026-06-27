@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>RocketStats Overlay</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: transparent !important; overflow: hidden; user-select: none; }
+    #overlay-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: opacity;
+    }
+    #overlay-container.visible {
+      opacity: 1;
+    }
+    #c { position: absolute; top: 0; left: 0; display: block; }
+  </style>
+</head>
+<body>
+<div id="overlay-container">
+  <canvas id="c"></canvas>
+</div>
+<script>
+'use strict';
+
+// ── Stato ─────────────────────────────────────────────────────────
+let CFG    = null;   // config.json del tema
+let IMAGES = {};     // { 'background.tga': HTMLImageElement, ... }
+let FONTS  = {};     // { 'Azonix.otf': 'data:font/otf;base64,...' }
+let STATS  = { MMR:'', MMRCumulChange:'0', Win:'0', Loss:'0', Streak:'0', Rank:'', Div:'', GameMode:'' };
+let canvas = null, ctx = null;
+let BASE_FONT = 14;
+let raf = null;
+let scaleMultiplier = 1.0;
+let OVERLAY_PLAYLIST = '2v2';
+let hasTrackerData = false;
+let showMmrDelta = false;
+
+// ── IPC: riceve la config dal main process ────────────────────────
+if (window.rc && window.rc.on) {
+  window.rc.on('overlay-init', init);
+  window.rc.on('overlay-hide', () => {
+    const container = document.getElementById('overlay-container');
+    if (container) container.classList.remove('visible');
+  });
+  window.rc.on('overlay-show', () => {
+    const container = document.getElementById('overlay-container');
+    if (container) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          container.classList.add('visible');
+        });
+      });
+    }
+  });
+  window.rc.on('tracker-update', updateStats);
+} else {
+  const t = setInterval(() => {
+    if (!window.rc || !window.rc.on) return;
+    clearInterval(t);
+    window.rc.on('overlay-init', init);
+    window.rc.on('overlay-hide', () => {
+      const container = document.getElementById('overlay-container');
+      if (container) container.classList.remove('visible');
+    });
+    window.rc.on('overlay-show', () => {
+      const container = document.getElementById('overlay-container');
+      if (container) {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            container.classList.add('visible');
+          });
+        });
+      }
+    });
+    window.rc.on('tracker-update', updateStats);
+  }, 20);
+}
+
+// ── Init tema ─────────────────────────────────────────────────────
+async function init(data) {
+  if (!data || !data.themeConfig) return;
+  CFG    = data.themeConfig;
+  IMAGES = {};
+  FONTS  = data.fonts || {};
+  scaleMultiplier = data.scaleMultiplier !== undefined ? data.scaleMultiplier : 1.0;
+  OVERLAY_PLAYLIST = data.playlist || '2v2';
+  showMmrDelta = data.showMmrDelta || false;
+
+  canvas = document.getElementById('c');
+  ctx    = canvas.getContext('2d');
+
+  // Font size base
+  BASE_FONT = (CFG.font && CFG.font[1]) ? CFG.font[1] : 16;
+
+  // Dimensioni canvas scaled by global scale * user multiplier
+  const gs = (CFG.scale || 1.0) * scaleMultiplier;
+  const W_design = resolveSize(CFG.width,  300, 0) + 120;
+  const H_design = resolveSize(CFG.height, 200, 0);
+  const W = Math.round(W_design * gs);
+  const H = Math.round(H_design * gs);
+  canvas.width  = W; canvas.style.width  = W + 'px';
+  canvas.height = H; canvas.style.height = H + 'px';
+
+  // Carica font custom da data URI
+  if (CFG.font && CFG.font[0] && FONTS[CFG.font[0]]) {
+    try {
+      const face = new FontFace('ThemeFont', `url("${FONTS[CFG.font[0]]}")`);
+      await face.load();
+      document.fonts.add(face);
+    } catch(e) {}
+  }
+
+  // Pre-carica tutte le immagini TGA (ora come PNG data URI)
+  const imgData = data.images || {};
+  const loads = Object.entries(imgData).map(([name, uri]) =>
+    new Promise(res => {
+      const img = new Image();
+      img.onload  = () => { IMAGES[name] = img; res(); };
+      img.onerror = () => res();
+      img.src = uri;
+    })
+  );
+  await Promise.all(loads);
+
+  // Avvia rendering e WebSocket
+  render();
+  connectWS();
+
+  // Trigger entrance transition
+  const container = document.getElementById('overlay-container');
+  if (container) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        container.classList.add('visible');
+      });
+    });
+  }
+}
+
+function render() {
+  if (!CFG || !ctx) return;
+  const gs = (CFG.scale || 1.0) * scaleMultiplier;
+  const W_design = resolveSize(CFG.width,  300, 0);
+  const H_design = resolveSize(CFG.height, 200, 0);
+  const W = canvas.width, H = canvas.height;
+
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.save();
+  // Clip drawing to physical canvas bounds to prevent overflow
+  ctx.rect(0, 0, W, H);
+  ctx.clip();
+
+  // Scale all rendering operations globally
+  ctx.scale(gs, gs);
+
+  ctx.globalAlpha = CFG.opacity !== undefined ? CFG.opacity : 1.0;
+
+  for (const el of (CFG.elements || [])) {
+    if (el.visible === false) continue;
+    ctx.save();
+    drawElement(el, W_design, H_design);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// ── Dispatcher elementi ───────────────────────────────────────────
+function drawElement(el, W, H) {
+  switch (el.type) {
+    case 'rectangle': drawRect(el, W, H);     break;
+    case 'text':      drawText(el, W, H);     break;
+    case 'image':     drawImage(el, W, H);    break;
+    case 'triangle':  drawTriangle(el, W, H);     break;
+    case 'line':      drawLine(el, W, H);         break;
+    case 'circle':    drawCircle(el, W, H);   break;
+  }
+}
+
+// ── Rettangolo ───────────────────────────────────────────────────
+function drawRect(el, W, H) {
+  const x = pc(el.x, W), y = pc(el.y, H);
+  const w = pc(el.width  !== undefined ? el.width  : '100%', W);
+  const h = pc(el.height !== undefined ? el.height : '100%', H);
+  const r = el.rounding || 0;
+
+  if (el.fill && el.fill !== false) {
+    ctx.fillStyle = rgba(el.fill);
+    r > 0 ? (rrect(x,y,w,h,r), ctx.fill()) : ctx.fillRect(x,y,w,h);
+  }
+  if (el.stroke && Array.isArray(el.stroke)) {
+    ctx.strokeStyle = rgba(el.stroke);
+    ctx.lineWidth = 1;
+    r > 0 ? (rrect(x,y,w,h,r), ctx.stroke()) : ctx.strokeRect(x,y,w,h);
+  }
+}
+
+// ── Testo ────────────────────────────────────────────────────────
+function drawText(el, W, H) {
+  const x = pc(el.x, W), y = pc(el.y, H);
+  const fs = Math.max(7, Math.round(BASE_FONT * (el.scale || 1) * 2.0));
+
+  ctx.font = `${fs}px ThemeFont, "Segoe UI", sans-serif`;
+  ctx.textAlign    = el.align  === 'right' ? 'right' : el.align  === 'center' ? 'center' : 'left';
+  ctx.textBaseline = el.valign === 'middle'? 'middle': el.valign === 'bottom'  ? 'bottom' : 'top';
+
+  let text = tpl(el.value || '');
+  if (!text || text === '') return;
+
+  // Sign: mostra + davanti ai positivi
+  if (el.sign) {
+    const n = parseFloat(text);
+    if (!isNaN(n) && n > 0) text = '+' + text;
+  }
+
+  // Colore
+  let color = rgba(el.color) || 'white';
+
+  // Chameleon: verde/rosso in base al segno
+  if (el.chameleon || (showMmrDelta && el.value && el.value.includes('{{MMR}}'))) {
+    const refKey = el.chameleon || 'MMRCumulChange';
+    const val = parseFloat(STATS[refKey]);
+    if (!isNaN(val)) color = val > 0 ? '#00ff00' : val < 0 ? '#ff3030' : color;
+  }
+
+  // Opacity elemento
+  if (el.opacity !== undefined) ctx.globalAlpha = el.opacity;
+
+  ctx.fillStyle = color;
+  ctx.fillText(text, x, y);
+}
+
+// ── Immagine (TGA già convertita in HTMLImageElement) ─────────────
+function drawImage(el, W, H) {
+  let src = tpl(el.file || '');
+  const fname = src.split(/[\\/]/).pop();
+  const img = IMAGES[fname];
+  if (!img) return;
+
+  const sx = pc(el.x, W);
+  const sy = pc(el.y, H);
+  const sc = el.scale || 1;
+
+  // Scala tutti gli elementi (sia sfondo che icone) in proporzione alle loro dimensioni naturali
+  // divise per 2.0 per allinearsi perfettamente alle proporzioni della mod originale in C++
+  const scaleAdjusted = sc / 2.0;
+  const iw = img.naturalWidth  * scaleAdjusted;
+  const ih = img.naturalHeight * scaleAdjusted;
+
+  const dx = el.align  === 'right'  ? sx - iw : el.align  === 'center' ? sx - iw/2 : sx;
+  const dy = el.valign === 'bottom' ? sy - ih  : el.valign === 'middle' ? sy - ih/2 : sy;
+
+  const prevAlpha = ctx.globalAlpha;
+  if (el.opacity !== undefined) ctx.globalAlpha = el.opacity;
+  ctx.drawImage(img, dx, dy, iw, ih);
+  ctx.globalAlpha = prevAlpha;
+}
+
+
+// ── Triangolo ───────────────────────────────────────────────────
+function drawTriangle(el, W, H) {
+  const x1=pc(el.x1,W), y1=pc(el.y1,H);
+  const x2=pc(el.x2,W), y2=pc(el.y2,H);
+  const x3=pc(el.x3,W), y3=pc(el.y3,H);
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.lineTo(x3,y3); ctx.closePath();
+  if (el.fill && el.fill !== false) { ctx.fillStyle = rgba(el.fill); ctx.fill(); }
+  if (el.stroke && Array.isArray(el.stroke)) { ctx.strokeStyle = rgba(el.stroke); ctx.stroke(); }
+}
+
+// ── Linea ────────────────────────────────────────────────────────
+function drawLine(el, W, H) {
+  ctx.beginPath();
+  ctx.moveTo(pc(el.x1,W), pc(el.y1,H));
+  ctx.lineTo(pc(el.x2,W), pc(el.y2,H));
+  ctx.strokeStyle = rgba(el.color) || 'rgba(255,255,255,0.3)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+}
+
+// ── Cerchio ──────────────────────────────────────────────────────
+function drawCircle(el, W, H) {
+  const cx = pc(el.x, W), cy = pc(el.y, H);
+  const r  = (el.radius || 50) * (el.scale || 1);
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  if (el.fill  && el.fill  !== false) { ctx.fillStyle   = rgba(el.fill);   ctx.fill();   }
+  if (el.stroke && Array.isArray(el.stroke)) { ctx.strokeStyle = rgba(el.stroke); ctx.lineWidth = el.strokeWidth || 1; ctx.stroke(); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+
+// Risolve coordinate: numero, "100%", "(n * Xpx) + Ypx", "100vw - ...", ecc.
+function pc(val, total) {
+  if (val === undefined || val === null) return 0;
+  if (typeof val === 'number') {
+    if (val > 0 && val < 1) return val * total; // tratta come percentuale 0-1
+    return val;
+  }
+  try {
+    const s = String(val)
+      .replace(/100vw/g, String(screen.availWidth))
+      .replace(/100vh/g, String(screen.availHeight))
+      .replace(/100%/g, String(total))
+      .replace(/(\d+(?:\.\d+)?)%/g, (_,n) => String(parseFloat(n)*total/100))
+      .replace(/px/g, '');
+    return Function('"use strict";return(' + s + ')')();
+  } catch { return 0; }
+}
+
+// Risolve dimensioni (stessa cosa ma con fallback)
+function resolveSize(val, fallback, ref) {
+  if (val === undefined || val === null) return fallback;
+  if (typeof val === 'number') return val;
+  try {
+    const s = String(val).replace(/px/g,'').replace(/%/g,`*${ref}/100`);
+    const r = Function('"use strict";return('+s+')')();
+    return isFinite(r) ? r : fallback;
+  } catch { return fallback; }
+}
+
+// rgba([r,g,b,a]) → css string
+function rgba(arr) {
+  if (!arr || !Array.isArray(arr)) return null;
+  const [r,g,b,a=1] = arr;
+  return `rgba(${r|0},${g|0},${b|0},${a})`;
+}
+
+// Template resolver: "{{MMR}}" → STATS.MMR
+function tpl(str) {
+  return String(str).replace(/\{\{(\w+)\}\}/g, (_,k) => STATS[k] ?? '');
+}
+
+// Rounded rect path
+function rrect(x,y,w,h,r) {
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+}
+
+// ── WebSocket RocketStats (Fallback) ──────────────────────────────
+function connectWS() {
+  const connect = () => {
+    const ws = new WebSocket('ws://localhost:8085');
+    ws.onopen = () => {};
+    ws.onmessage = e => {
+      try {
+        const msg = JSON.parse(e.data);
+        document.dispatchEvent(new CustomEvent(`RocketStats_${msg.type}`, {detail:{name:msg.name,type:msg.type,data:msg.data,states:msg.states}}));
+        document.dispatchEvent(new CustomEvent(`RocketStats_${msg.name}`, {detail:{name:msg.name,type:msg.type,data:msg.data,states:msg.states}}));
+        if (msg.name === 'State' && msg.data === 'Disconnected') {
+          if (!hasTrackerData) {
+            STATS = {...STATS, MMR:'',MMRCumulChange:'0',Win:'0',Loss:'0',Streak:'0'};
+            render();
+          }
+        }
+      } catch {}
+    };
+    ws.onclose = () => setTimeout(connect, 1000);
+    ws.onerror = () => ws.close();
+  };
+  connect();
+}
+
+function normalizeGameMode(mode) {
+  if (!mode) return null;
+  const m = String(mode).toLowerCase();
+  if (m.includes('1v1') || m.includes('1vs1') || m.includes('duel') || m.includes('solo')) return '1v1';
+  if (m.includes('2v2') || m.includes('2vs2') || m.includes('double')) return '2v2';
+  if (m.includes('3v3') || m.includes('3vs3') || m.includes('standard')) return '3v3';
+  if (m.includes('hoops') || m.includes('canestro') || m.includes('canestri')) return 'hoops';
+  if (m.includes('rumble') || m.includes('gloria')) return 'rumble';
+  if (m.includes('dropshot') || m.includes('calamità')) return 'dropshot';
+  if (m.includes('snow') || m.includes('giorno di neve') || m.includes('hockey')) return 'snowday';
+  return null;
+}
+
+document.addEventListener('RocketStats_GameState', e => {
+  const Stats = e.detail.data.Stats;
+  if (Stats) {
+    const detectedPl = normalizeGameMode(Stats.GameMode);
+    if (detectedPl && window.rc && window.rc.sendRocketStatsUpdate) {
+      window.rc.sendRocketStatsUpdate({
+        playlist: detectedPl,
+        mmr: parseFloat(Stats.MMR) || 0,
+        session: {
+          wins: parseInt(Stats.Win, 10) || 0,
+          losses: parseInt(Stats.Loss, 10) || 0,
+          streak: parseInt(Stats.Streak, 10) || 0
+        }
+      });
+    }
+
+    if (hasTrackerData) {
+      // If we have tracker data active, we do not let RocketStats C++ plugin overwrite core stats
+      delete Stats.MMR;
+      delete Stats.MMRCumulChange;
+      delete Stats.Rank;
+      delete Stats.Div;
+      delete Stats.GameMode;
+    } else {
+      // Fallback safeguard against invalid/zero MMR from RocketStats
+      const mmrVal = parseFloat(Stats.MMR);
+      if (isNaN(mmrVal) || mmrVal <= 0) {
+        delete Stats.MMR;
+        delete Stats.MMRCumulChange;
+      } else if (showMmrDelta) {
+        // Overwrite MMR with cumulative change if option is active
+        const diffVal = parseFloat(Stats.MMRCumulChange);
+        if (!isNaN(diffVal)) {
+          Stats.MMR = (diffVal >= 0 ? '+' : '') + diffVal;
+        }
+      }
+    }
+    Object.assign(STATS, Stats);
+    render();
+  }
+});
+
+// ── Live Tracker Data Handler ──────────────────────────────────────
+function getActivePlaylist(data) {
+  const session = data.session;
+  if (OVERLAY_PLAYLIST === 'best') {
+    let bestPl = '2v2';
+    let maxMmr = -1;
+    const playlists = ['1v1', '2v2', '3v3', 'rumble', 'hoops', 'dropshot', 'snowday'];
+    for (const pl of playlists) {
+      const mmr = session.currentMmr?.[pl];
+      if (mmr !== undefined && mmr > maxMmr) {
+        maxMmr = mmr;
+        bestPl = pl;
+      }
+    }
+    return bestPl;
+  }
+  if (OVERLAY_PLAYLIST === 'current') {
+    let currentPl = data.detectedPlaylist || '2v2';
+    if (currentPl === 'casual') {
+      let bestPl = '2v2';
+      let maxMmr = -1;
+      const playlists = ['1v1', '2v2', '3v3', 'rumble', 'hoops', 'dropshot', 'snowday'];
+      for (const pl of playlists) {
+        const mmr = session.currentMmr?.[pl];
+        if (mmr !== undefined && mmr > maxMmr) {
+          maxMmr = mmr;
+          bestPl = pl;
+        }
+      }
+      currentPl = bestPl;
+    }
+    return currentPl;
+  }
+  return OVERLAY_PLAYLIST;
+}
+
+function updateStats(data) {
+  if (!data || !data.session) return;
+  hasTrackerData = true;
+  const session = data.session;
+  const pl = getActivePlaylist(data);
+
+  const start = session.startMmr?.[pl] || 0;
+  const current = session.currentMmr?.[pl] || 0;
+
+  if (showMmrDelta) {
+    const diff = current - start;
+    STATS.MMR = (diff >= 0 ? '+' : '') + diff;
+    STATS.MMRCumulChange = String(diff);
+  } else {
+    STATS.MMR = current ? String(current) : '';
+    STATS.MMRCumulChange = current ? String(current - start) : '0';
+  }
+  STATS.Win = session.wins !== undefined ? String(session.wins) : '0';
+  STATS.Loss = session.losses !== undefined ? String(session.losses) : '0';
+  STATS.Streak = session.streak !== undefined ? String(session.streak) : '0';
+
+  let tierName = session.rankNames?.[pl] || '';
+  if (tierName) {
+    tierName = tierName.trim().split(/\s+/).map(word => {
+      const u = word.toUpperCase();
+      if (['I', 'II', 'III', 'IV', 'V'].includes(u)) return u;
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join('_') + '.tga';
+  } else {
+    tierName = 'Unranked.tga';
+  }
+  STATS.Rank = tierName;
+  STATS.Div = session.divisions?.[pl] || '';
+
+  const modeNames = {
+    '1v1': 'Duel (1v1)',
+    '2v2': 'Doubles (2v2)',
+    '3v3': 'Standard (3v3)',
+    'rumble': 'Rumble',
+    'hoops': 'Hoops',
+    'dropshot': 'Dropshot',
+    'snowday': 'Snow Day',
+    'casual': 'Casual',
+    'tournament': 'Tournament'
+  };
+  STATS.GameMode = modeNames[pl] || pl;
+  render();
+}
+</script>
+</body>
+</html>

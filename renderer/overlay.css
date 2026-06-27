@@ -1,0 +1,144 @@
+/* ─── RocketCroc HUD Overlay (RocketStats Style) ─── */
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,700;0,900;1,400;1,700;1,900&display=swap');
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: transparent;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  overflow: hidden;
+}
+
+.hud-overlay {
+  width: 200px;
+  margin: 8px auto;
+  background: rgba(10, 12, 16, 0.90);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  transform: skewX(-8deg); /* Slanted/skewed look */
+  transition: opacity 0.2s ease;
+}
+
+.hud-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.12);
+}
+
+.hud-title {
+  font-size: 11px;
+  font-weight: 900;
+  font-style: italic;
+  color: #bf5af2; /* App theme purple */
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.hud-playlist {
+  font-size: 11px;
+  font-weight: 800;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+}
+
+.hud-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hud-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.hud-row:last-child {
+  border-bottom: none;
+}
+
+.hud-label {
+  font-size: 11px;
+  font-weight: 800;
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.5px;
+}
+
+.hud-value-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.hud-value {
+  font-size: 13.5px;
+  font-weight: 900;
+  font-style: italic;
+  color: #f1f5f9;
+}
+
+.hud-delta {
+  font-size: 11.5px;
+  font-weight: 900;
+  font-style: italic;
+}
+
+.hud-delta.pos {
+  color: #22c55e;
+}
+
+.hud-delta.neg {
+  color: #f43f5e;
+}
+
+/* Match indicator */
+.hud-match-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(191, 90, 242, 0.15);
+  border: 1px solid rgba(191, 90, 242, 0.3);
+  border-radius: 4px;
+  padding: 3px;
+  margin-top: 6px;
+  font-size: 9.5px;
+  font-weight: 900;
+  font-style: italic;
+  color: #bf5af2;
+  text-transform: uppercase;
+}
+
+.hud-match-banner .dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #bf5af2;
+  animation: blink 1.2s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.hud-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
