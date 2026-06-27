@@ -3,6 +3,70 @@ const path = require('path');
 const crypto = require('crypto');
 const EventEmitter = require('events');
 
+const CODENAME_MAP = {
+  // Bodies
+  'bodies:future': 'Hatsune Miku',
+  'bodies:future t': 'Hatsune Miku',
+  
+  // Boosts
+  'boosts:animesmoke': 'Anime Smoke',
+  'boosts:animesmoke smh': 'Anime Smoke',
+  'boosts:animesmoke smh t': 'Anime Smoke',
+  'boosts:animesmoke t': 'Anime Smoke',
+  'boosts:anime': 'Leek Beam',
+  'boosts:anime t': 'Leek Beam',
+  'boosts:future': 'Leek Beam',
+  'boosts:future t': 'Leek Beam',
+  
+  // Goal Explosions
+  'goalexplosions:anime': 'Miku Pop',
+  'goalexplosions:anime t': 'Miku Pop',
+  'goalexplosions:animesmoke': 'Miku Pop',
+  'goalexplosions:animesmoke t': 'Miku Pop',
+  
+  // Toppers
+  'toppers:futureglasses': 'Hatsune Miku Glasses',
+  'toppers:futureglasses t': 'Hatsune Miku Glasses',
+  'toppers:futureglasses psplus': 'Hatsune Miku Glasses',
+  'toppers:futureglasses psplus t': 'Hatsune Miku Glasses',
+  'toppers:futurepigeon': 'Miku Pigeon',
+  'toppers:futurepigeon t': 'Miku Pigeon',
+  'toppers:future baja': 'Leek',
+  'toppers:future baja t': 'Leek',
+  
+  // Player Banners
+  'playerbanners:animepattern': 'Miku Pattern',
+  'playerbanners:animepattern t': 'Miku Pattern',
+  'playerbanners:animewind': 'Miku Wind',
+  'playerbanners:animewind t': 'Miku Wind',
+  'playerbanners:anime': 'Hatsune Miku',
+  'playerbanners:anime t': 'Hatsune Miku',
+  'playerbanners:futurewave': 'Futurewave',
+  'playerbanners:futurewave t': 'Futurewave',
+  
+  // Trails
+  'trails:animesmoke': 'Miku Miku',
+  'trails:animesmoke t': 'Miku Miku',
+  'trails:anime': 'Miku Miku',
+  'trails:anime t': 'Miku Miku',
+  
+  // Wheels
+  'wheels:futurewave': 'Rolled Leek',
+  'wheels:futurewave t': 'Rolled Leek',
+  
+  // Decals
+  'decals:future baja': 'Miku Rider Dark',
+  'decals:future baja t': 'Miku Rider Dark',
+  'decals:future camo': 'Miku Camo',
+  'decals:future camo t': 'Miku Camo',
+  'decals:future matteblack': 'Miku Matte Black',
+  'decals:future matteblack t': 'Miku Matte Black',
+  'decals:future stainless buster': 'Miku Stainless Buster',
+  'decals:future stainless buster t': 'Miku Stainless Buster',
+  'decals:future': 'Miku Rider Dark',
+  'decals:future t': 'Miku Rider Dark'
+};
+
 /**
  * SwapEngine — Reads .upk files from CookedPCConsole, backs them up,
  * and swaps them on disk before the game reads them.
@@ -486,7 +550,11 @@ class SwapEngine extends EventEmitter {
     return sliced.map(item => {
       const type = item.category || item.type || 'Item';
       const targetFile = DEFAULTS_BY_CATEGORY[type] || item.file || item.targetFile || '';
-      const name = item.label || item.name || 'Unknown';
+      let name = item.label || item.name || 'Unknown';
+      const mapKey = `${type.toLowerCase()}:${name.toLowerCase()}`;
+      if (CODENAME_MAP[mapKey]) {
+        name = CODENAME_MAP[mapKey];
+      }
       let image = this.thumbnailsMap ? (this.thumbnailsMap[name.toLowerCase()] || '') : '';
       if (!image) {
         if (type === 'Decals' && name.includes(':')) {
@@ -607,6 +675,15 @@ class SwapEngine extends EventEmitter {
         if (this.thumbnailsMap) {
           delete this.thumbnailsMap[""];
           delete this.thumbnailsMap["undefined"];
+          for (const key of Object.keys(CODENAME_MAP)) {
+            const parts = key.split(':');
+            if (parts.length > 1) {
+              const codename = parts[1].toLowerCase();
+              const translated = CODENAME_MAP[key].toLowerCase();
+              if (this.thumbnailsMap[codename] === '') delete this.thumbnailsMap[codename];
+              if (this.thumbnailsMap[translated] === '') delete this.thumbnailsMap[translated];
+            }
+          }
         }
         this.logger.info(`SwapEngine: Loaded thumbnails map from cache (${Object.keys(this.thumbnailsMap).length} items)`);
         return;
@@ -702,7 +779,11 @@ class SwapEngine extends EventEmitter {
 
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
-      const name = item.label || item.name || '';
+      let name = item.label || item.name || '';
+      const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
+      if (CODENAME_MAP[mapKey]) {
+        name = CODENAME_MAP[mapKey];
+      }
       const key = name.toLowerCase();
       if (this.thumbnailsMap[key] !== undefined) {
         downloadedCount++;
@@ -727,7 +808,11 @@ class SwapEngine extends EventEmitter {
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
-      const name = item.label || item.name || '';
+      let name = item.label || item.name || '';
+      const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
+      if (CODENAME_MAP[mapKey]) {
+        name = CODENAME_MAP[mapKey];
+      }
       const key = name.toLowerCase();
       return this.thumbnailsMap[key] === undefined;
     });
@@ -751,7 +836,11 @@ class SwapEngine extends EventEmitter {
       while (queue.length > 0) {
         const item = queue.shift();
         if (!item) break;
-        const name = item.label || item.name || '';
+        let name = item.label || item.name || '';
+        const mapKey = `${item.category.toLowerCase()}:${name.toLowerCase()}`;
+        if (CODENAME_MAP[mapKey]) {
+          name = CODENAME_MAP[mapKey];
+        }
         const nameLower = name.toLowerCase();
         if (this.thumbnailsMap[nameLower] !== undefined) {
           processed++;
