@@ -54,7 +54,7 @@
     <span class="app-version">v1.0</span>
   </div>
   <div class="titlebar-right">
-    <button class="titlebar-btn update" id="btn-update" title="Gestione Aggiornamenti" style="position: relative;">
+    <button class="titlebar-btn update" id="btn-update" title="Update Management" style="position: relative;">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
       <span class="update-badge" id="update-badge" style="display: none; position: absolute; top: 3px; right: 3px; width: 6px; height: 6px; background-color: var(--accent); border-radius: 50%; box-shadow: 0 0 6px var(--accent);"></span>
     </button>
@@ -156,7 +156,7 @@
         </select>
         <div style="position: relative; display: flex;">
           <button class="btn btn-ghost" id="btn-swaps-refresh" title="Aggiorna catalogo e controlla download" style="white-space: nowrap; display: flex; align-items: center; gap: 6px; padding: 0 16px;">
-            🔄 Aggiorna
+            🔄 Refresh
           </button>
           <div id="swaps-refresh-popup">
             Mancano <span id="missing-count">0</span> oggetti!
@@ -166,7 +166,7 @@
 
       <!-- Download progress bar -->
       <div id="swaps-download-progress-bar" style="display:none; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; margin-top:8px; margin-bottom:12px; align-items:center; gap:12px; width: 100%;">
-        <span style="font-size:12px; color:var(--text-muted); white-space:nowrap;" id="swaps-progress-text">Controllo aggiornamenti...</span>
+        <span style="font-size:12px; color:var(--text-muted); white-space:nowrap;" id="swaps-progress-text">Checking for updates...</span>
         <div style="flex:1; height:6px; background:rgba(255,255,255,0.08); border-radius:4px; overflow:hidden; position:relative;">
           <div id="swaps-progress-fill" style="width:0%; height:100%; background:var(--accent); border-radius:4px; transition:width 0.15s ease;"></div>
         </div>
@@ -311,11 +311,11 @@
             <!-- Rendered dynamically -->
           </div>
           <div style="display: flex; gap: 8px; margin-bottom: 16px; width: 100%;">
-            <button class="btn btn-ghost btn-sm" id="btn-tracker-add-field" style="flex: 1; font-weight: 600;">➕ Aggiungi Account</button>
+            <button class="btn btn-ghost btn-sm" id="btn-tracker-add-field" style="flex: 1; font-weight: 600;">➕ Add Account</button>
           </div>
           <button class="btn btn-primary" id="btn-tracker-connect" style="width: 100%;">Connect</button>
           <div class="setup-hint" id="local-login-hint" style="display: none; margin-top: 14px; text-align: center; font-size: 12px; color: rgba(255,255,255,0.5);">
-            Profilo rilevato dal gioco: <span id="detected-username" style="color: #bf5af2; font-weight: 600;"></span>
+            Profile detected from game: <span id="detected-username" style="color: #bf5af2; font-weight: 600;"></span>
             <button class="btn btn-ghost btn-sm" id="btn-use-detected" style="margin-left: 8px; font-size: 11px; padding: 2px 6px;">Usa questo</button>
           </div>
         </div>
@@ -552,7 +552,7 @@
       <div style="margin-top: 15px; padding-top: 12px; border-top: 1px dashed rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
         <div>
           <label for="rocketstats-delta-checkbox" style="font-weight: 600; font-size: 13.5px; color: #fff; display: block; cursor: pointer;">Mostra Guadagno MMR (Cumulativo)</label>
-          <span style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Mostra la variazione di MMR della sessione (es. +12, -8) invece del valore totale.</span>
+          <span style="font-size: 11.5px; color: var(--text-muted); display: block; margin-top: 2px;">Shows the MMR change for the session (e.g. +12, -8) instead of the total value.</span>
         </div>
         <input type="checkbox" id="rocketstats-delta-checkbox" style="width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
       </div>
@@ -609,7 +609,7 @@
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
         <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: space-between;">
           <div>
-            <label for="ingamerank-enabled-checkbox" style="font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; display: block;">Abilita Overlay</label>
+            <label for="ingamerank-enabled-checkbox" style="font-weight: 600; font-size: 13px; color: #fff; cursor: pointer; display: block;">Enable Overlay</label>
             <span style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 1px;">Attiva il roster overlay</span>
           </div>
           <input type="checkbox" id="ingamerank-enabled-checkbox" style="width: 17px; height: 17px; accent-color: var(--accent); cursor: pointer; border-radius: 4px;">
@@ -659,11 +659,11 @@
       <!-- Custom Input (GameSir / Custom mapping) -->
       <div style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px;">
         <span style="font-weight: 600; font-size: 13px; color: #fff; display: block; margin-bottom: 4px;">Custom Input / GameSir (C1, Share, etc.)</span>
-        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 10px;">Configura un tasto o pulsante personalizzato (qualsiasi controller o tastiera).</span>
+        <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 10px;">Set a custom key or button (any controller or keyboard).</span>
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-          <span id="ingamerank-custom-input-label" style="font-size: 12.5px; font-family: monospace; color: var(--accent); font-weight: 700; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 4px 8px; border-radius: 4px; flex-grow: 1; text-align: center; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Nessun input personalizzato</span>
-          <button class="btn btn-sm" id="ingamerank-btn-record-input" style="padding: 6px 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; color: #fff; transition: all 0.2s; font-size: 12px;">Registra</button>
-          <button class="btn btn-sm btn-danger-sm" id="ingamerank-btn-clear-input" style="padding: 6px 12px; font-size: 12px;">Rimuovi</button>
+          <span id="ingamerank-custom-input-label" style="font-size: 12.5px; font-family: monospace; color: var(--accent); font-weight: 700; background: rgba(59,130,246,0.1); border: 1px solid rgba(59,130,246,0.2); padding: 4px 8px; border-radius: 4px; flex-grow: 1; text-align: center; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">No custom input</span>
+          <button class="btn btn-sm" id="ingamerank-btn-record-input" style="padding: 6px 12px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; cursor: pointer; color: #fff; transition: all 0.2s; font-size: 12px;">Record</button>
+          <button class="btn btn-sm btn-danger-sm" id="ingamerank-btn-clear-input" style="padding: 6px 12px; font-size: 12px;">Remove</button>
         </div>
       </div>
 

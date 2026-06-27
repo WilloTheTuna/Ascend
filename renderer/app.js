@@ -958,7 +958,7 @@ async function openSlotModal(mapId, mapName) {
     });
 
   } catch (err) {
-    toast('Errore nel caricamento degli slot', 'error');
+    toast('Error loading slots', 'error');
   }
 }
 
@@ -983,8 +983,8 @@ async function openMapSelectModal(slotId) {
     if (!localMaps || localMaps.length === 0) {
       container.innerHTML = `
         <div class="empty-state" style="padding:20px 0;">
-          <p>Nessuna mappa scaricata trovata</p>
-          <span style="font-size:12px; color:var(--text-muted);">Scarica prima qualche mappa dal Workshop online!</span>
+          <p>No downloaded maps found</p>
+          <span style="font-size:12px; color:var(--text-muted);">Download some maps from the online Workshop first!</span>
         </div>`;
       return;
     }
@@ -1019,19 +1019,19 @@ async function openMapSelectModal(slotId) {
 
         const res = await rc.launchMap(mapId, slotId);
         if (res.ok) {
-          toast(`Mappa caricata con successo in ${slotName}`, 'success');
+          toast(`Map loaded successfully in ${slotName}`, 'success');
           closeMapSelectModal();
           await loadWorkshopMaps();
         } else {
           row.disabled = false;
           row.style.opacity = '1';
-          toast(res.error || 'Errore nel caricamento', 'error');
+          toast(res.error || 'Error loading map', 'error');
         }
       });
     });
 
   } catch (err) {
-    container.innerHTML = `<p style="color:var(--danger)">Errore caricamento mappe</p>`;
+    container.innerHTML = `<p style="color:var(--danger)">Error loading maps</p>`;
   }
 }
 
@@ -1048,7 +1048,7 @@ function setupWorkshopListeners() {
       const filePath = await rc.selectWorkshopZip();
       if (!filePath) return;
       
-      toast('Importazione mappa in corso...', 'success');
+      toast('Importing map...', 'success');
       const baseName = filePath.split(/[/\\]/).pop().replace(/\.(zip|udk|upk)$/i, '');
       const mapName = baseName.replace(/[-_]/g, ' ');
       
@@ -1061,7 +1061,7 @@ function setupWorkshopListeners() {
         toast(`Mappa importata con successo: ${res.map.name}`, 'success');
         await loadWorkshopMaps();
       } else {
-        toast(res.error || 'Importazione fallita', 'error');
+        toast(res.error || 'Import failed', 'error');
       }
     } catch (err) {
       toast(err.message, 'error');
@@ -1177,7 +1177,7 @@ async function loadBakkesPlugins() {
             <div class="plugin-version" style="font-family:monospace;color:var(--text-muted)">plugins/${escapeHtml(p.filename)}</div>
           </div>
           <div class="plugin-right">
-            ${hasSettings ? `<button class="btn btn-sm btn-settings-plugin" title="Impostazioni plugin" data-plugin-settings="${escapeHtml(p.id)}" style="padding:6px 10px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:6px; cursor:pointer; color:var(--text-muted); transition:all 0.2s;">⚙️</button>` : ''}
+            ${hasSettings ? `<button class="btn btn-sm btn-settings-plugin" title="Plugin Settings" data-plugin-settings="${escapeHtml(p.id)}" style="padding:6px 10px; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:6px; cursor:pointer; color:var(--text-muted); transition:all 0.2s;">⚙️</button>` : ''}
             <button class="btn btn-sm btn-restart-plugin" title="Riavvia plugin" data-plugin-restart="${escapeHtml(p.id)}" style="padding:6px 10px; background:rgba(255,200,0,0.10); border:1px solid rgba(255,200,0,0.20); border-radius:6px; cursor:pointer; color:#f5c400; transition:all 0.2s;">↺</button>
             <div class="toggle${p.enabled ? ' on' : ''}" data-bakkes-toggle="${escapeHtml(p.id)}"></div>
             <button class="btn btn-danger btn-sm btn-bakkes-uninstall">Remove</button>
@@ -1193,7 +1193,7 @@ async function loadBakkesPlugins() {
         const res = await rc.toggleBakkesPlugin(id);
         if (res.ok) {
           el.classList.toggle('on', res.enabled);
-          toast(`Plugin ${id} ${res.enabled ? 'abilitato' : 'disabilitato'}!`, 'success');
+          toast(`Plugin ${id} ${res.enabled ? 'enabled' : 'disabled'}!`, 'success');
         } else {
           toast(res.error, 'error');
         }
@@ -1205,7 +1205,7 @@ async function loadBakkesPlugins() {
       btn.addEventListener('click', async () => {
         const card = btn.closest('.plugin-card');
         const id = card.dataset.pluginId;
-        if (confirm(`Sicuro di voler rimuovere il plugin ${id}?`)) {
+        if (confirm(`Are you sure you want to remove plugin ${id}?`)) {
           const res = await rc.uninstallBakkesPlugin(id);
           if (res.ok) {
             toast(`Plugin rimosso con successo`, 'success');
@@ -1247,7 +1247,7 @@ async function loadBakkesPlugins() {
           toast(`Plugin ${id} riavviato!`, 'success');
           await loadBakkesPlugins();
         } catch (e) {
-          toast('Errore nel riavvio del plugin', 'error');
+          toast('Error restarting plugin', 'error');
           btn.disabled = false;
           btn.textContent = '↺';
         }
@@ -1281,9 +1281,9 @@ async function openPluginSettings(pluginId) {
   // Reset
   rsSection.style.display = 'none';
   if (igrSection) igrSection.style.display = 'none';
-  themeGrid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Caricamento temi...</div>';
+  themeGrid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading themes...</div>';
 
-  title.textContent = `${pluginId} — Impostazioni`;
+  title.textContent = `${pluginId} — Settings`;
   subtitle.textContent = 'Configura le opzioni del plugin';
   modal.style.display = 'flex';
 
@@ -1559,7 +1559,7 @@ async function openPluginSettings(pluginId) {
     }
 
     const getTriggerLabel = (type, index) => {
-      if (!type) return 'Nessun input personalizzato';
+      if (!type) return 'No custom input';
       if (type === 'keyboard') {
         const VK_MAP = {
           9: 'Tab', 13: 'Invio', 16: 'Shift', 17: 'Ctrl', 18: 'Alt', 20: 'CapsLock', 27: 'Escape', 32: 'Spazio',
@@ -1578,7 +1578,7 @@ async function openPluginSettings(pluginId) {
       if (type === 'controller_raw') {
         return `Pulsante Raw Controller: ${index}`;
       }
-      return 'Nessun input personalizzato';
+      return 'No custom input';
     };
 
     const customLabel = document.getElementById('ingamerank-custom-input-label');
@@ -1620,15 +1620,15 @@ async function openPluginSettings(pluginId) {
             triggerIndex: recordRes.index
           });
           updateLabel(recordRes.type, recordRes.index);
-          toast('Input personalizzato registrato con successo!', 'success');
+          toast('Custom input registered successfully!', 'success');
         } else if (recordRes && recordRes.type === 'timeout') {
           updateLabel(res.triggerType, res.triggerIndex);
-          toast('Tempo scaduto. Nessun tasto premuto.', 'warning');
+          toast('Timed out. No key pressed.', 'warning');
         } else if (recordRes && recordRes.type === 'cancelled') {
           updateLabel(res.triggerType, res.triggerIndex);
         } else if (recordRes && recordRes.type === 'error') {
           updateLabel(res.triggerType, res.triggerIndex);
-          toast(`Errore di registrazione: ${recordRes.error}`, 'error');
+          toast(`Recording error: ${recordRes.error}`, 'error');
         }
       };
     }
@@ -1640,7 +1640,7 @@ async function openPluginSettings(pluginId) {
           triggerIndex: null
         });
         updateLabel(null, null);
-        toast('Input personalizzato rimosso.', 'info');
+        toast('Custom input removed.', 'info');
       };
     }
 
@@ -1969,12 +1969,12 @@ function setupPluginSettingsModal() {
       try {
         const res = await rc.resetRocketStats();
         if (res.ok) {
-          toast('Stats resettate! ✅ BakkesMod eseguirà rs_reset_stats al prossimo aggiornamento.', 'success');
+          toast('Stats reset! ✅ BakkesMod will run rs_reset_stats on next update.', 'success');
         } else {
-          toast(res.error || 'Errore nel reset stats', 'error');
+          toast(res.error || 'Error resetting stats', 'error');
         }
       } catch (e) {
-        toast('Errore: ' + e.message, 'error');
+        toast('Error: ' + e.message, 'error');
       } finally {
         resetBtn.disabled = false;
         resetBtn.innerHTML = '🗑️ Reset Stats';
@@ -2019,7 +2019,7 @@ function setupPluginsListeners() {
     installBtn.addEventListener('click', async () => {
       const val = pathInput.value.trim();
       if (!val) return toast('Specifica il percorso di un file ZIP', 'warning');
-      toast('Installazione in corso...', 'success');
+      toast('Installing...', 'success');
       const res = await rc.installBakkesPlugin(val);
       if (res.ok) {
         toast(`Plugin ${res.id} installato con successo!`, 'success');
@@ -2288,7 +2288,7 @@ document.getElementById('btn-tracker-connect')?.addEventListener('click', async 
     return toast('Specifica almeno un Epic username', 'warning');
   }
 
-  toast('Connessione in corso...', 'success');
+  toast('Connecting...', 'success');
 
   const activeIndex = settings.tracker?.activeAccountIndex || 0;
   const activeUsername = usernamesList[activeIndex] || usernamesList[0];
@@ -2343,18 +2343,18 @@ document.getElementById('btn-tracker-edit')?.addEventListener('click', () => {
 });
 
 document.getElementById('btn-tracker-reset-stats')?.addEventListener('click', async () => {
-  if (confirm('Sei sicuro di voler azzerare le statistiche di sessione (MMR, Win, Loss, Streak)?')) {
+  if (confirm('Are you sure you want to reset session stats (MMR, Win, Loss, Streak)?')) {
     try {
       const res = await rc.resetTrackerStats();
       if (res.ok) {
-        toast('Statistiche resettate! ✅', 'success');
+        toast('Stats reset! ✅', 'success');
         const session = await rc.getSession();
         updateTrackerUI(session);
       } else {
-        toast(res.error || 'Errore nel reset delle statistiche', 'error');
+        toast(res.error || 'Error resetting stats', 'error');
       }
     } catch (e) {
-      toast('Errore: ' + e.message, 'error');
+      toast('Error: ' + e.message, 'error');
     }
   }
 });
@@ -2521,7 +2521,7 @@ function updateTrackerUI(data) {
     switcherContainer.querySelectorAll('.acc-btn').forEach(btn => {
       btn.addEventListener('click', async () => {
         const idx = parseInt(btn.dataset.accIndex);
-        toast('Caricamento account...', 'success');
+        toast('Loading account...', 'success');
         await rc.setActiveAccount(idx);
         settings = await rc.getSettings();
         const newSession = await rc.getSession();
