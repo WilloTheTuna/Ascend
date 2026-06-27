@@ -2392,6 +2392,30 @@ function updateTrackerUI(data) {
   if (!data) return;
   const { profile, mmr, mmrDelta, session, playlist, resolvedPlaylist, inMatch, activeAccount, username1, username2, usernames, activeAccountIndex, rankIcon, rankName, divisionName, isWsConnected, isUnranked, unrankedIcon } = data;
   
+  const avatarPlaceholder = `
+    <svg width="100%" height="100%" viewBox="0 0 28 28" fill="none" style="display: block;">
+      <circle cx="14" cy="14" r="12" fill="url(#gradBlackHoleAvatar)" stroke="rgba(191,90,242,0.3)" stroke-width="1"/>
+      <ellipse cx="14" cy="14" rx="14" ry="3.5" transform="rotate(-30 14 14)" fill="url(#gradDiskAvatar)" />
+      <circle cx="14" cy="14" r="7.5" fill="#000000" stroke="#bf5af2" stroke-width="0.5"/>
+      <path d="M 3 20 C 10 16, 18 12, 25 8" stroke="url(#gradDiskFrontAvatar)" stroke-width="3" stroke-linecap="round" />
+      <defs>
+        <linearGradient id="gradBlackHoleAvatar" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#0a0518"/>
+          <stop offset="100%" stop-color="#240b36"/>
+        </linearGradient>
+        <linearGradient id="gradDiskAvatar" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#bf5af2" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#8e2de2" stop-opacity="0.1"/>
+        </linearGradient>
+        <linearGradient id="gradDiskFrontAvatar" x1="3" y1="20" x2="25" y2="8" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stop-color="#bf5af2"/>
+          <stop offset="50%" stop-color="#ffffff"/>
+          <stop offset="100%" stop-color="#8e2de2"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  `;
+  
   const color = getRankColor(rankName);
 
 
@@ -2414,7 +2438,7 @@ function updateTrackerUI(data) {
       } else if (profile.avatarUrl) {
         avatarEl.innerHTML = `<img src="${profile.avatarUrl}" alt="avatar"/>`;
       } else {
-        avatarEl.innerHTML = `🐊`;
+        avatarEl.innerHTML = avatarPlaceholder;
       }
     }
   } else {
@@ -2433,7 +2457,7 @@ function updateTrackerUI(data) {
         }
         avatarEl.innerHTML = `<img src="${rankIcon}" alt="${rankName || 'rank'}" title="${rankName || 'rank'}"/>${overlayHtml}`;
       } else {
-        avatarEl.innerHTML = `🐊`;
+        avatarEl.innerHTML = avatarPlaceholder;
       }
     }
   }
