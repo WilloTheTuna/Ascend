@@ -69,16 +69,16 @@ class SettingsManager {
         if (saved.ingameRankOffsetYOrange === undefined || saved.ingameRankOffsetYOrange === 0) saved.ingameRankOffsetYOrange = DEFAULTS.ingameRankOffsetYOrange;
         if (saved.ingameRankOffsetXBlue === undefined) saved.ingameRankOffsetXBlue = DEFAULTS.ingameRankOffsetXBlue;
         if (saved.ingameRankOffsetXOrange === undefined) saved.ingameRankOffsetXOrange = DEFAULTS.ingameRankOffsetXOrange;
-        if (saved.ingameRankScaleMultiplier === undefined || saved.ingameRankScaleMultiplier === 1.03) {
+        if (saved.ingameRankScaleMultiplier === undefined || saved.ingameRankScaleMultiplier >= 1.0) {
           saved.ingameRankScaleMultiplier = DEFAULTS.ingameRankScaleMultiplier;
         }
-        if (saved.ingameRankUiScalePercent === undefined || saved.ingameRankUiScalePercent === 100) {
+        if (saved.ingameRankUiScalePercent === undefined || saved.ingameRankUiScalePercent >= 100) {
           saved.ingameRankUiScalePercent = DEFAULTS.ingameRankUiScalePercent;
         }
-        if (saved.rocketStatsScaleMultiplier === undefined || saved.rocketStatsScaleMultiplier === 0.78) {
+        if (saved.rocketStatsScaleMultiplier === undefined || saved.rocketStatsScaleMultiplier >= 0.75) {
           saved.rocketStatsScaleMultiplier = DEFAULTS.rocketStatsScaleMultiplier;
         }
-        if (saved.rocketStatsUiScalePercent === undefined || saved.rocketStatsUiScalePercent === 100) {
+        if (saved.rocketStatsUiScalePercent === undefined || saved.rocketStatsUiScalePercent >= 100) {
           saved.rocketStatsUiScalePercent = DEFAULTS.rocketStatsUiScalePercent;
         }
         if (saved.ingameRankTriggerType === undefined) saved.ingameRankTriggerType = '';
