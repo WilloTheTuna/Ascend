@@ -337,7 +337,7 @@
           </div>
           <div class="account-switcher" id="account-switcher" style="display: flex; gap: 8px; align-items: center;">
             <div id="account-buttons-container" style="display: flex; gap: 8px; align-items: center;"></div>
-            <button class="btn btn-ghost btn-sm" id="btn-tracker-edit" title="Modifica Account" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px;">
+            <button class="btn btn-ghost btn-sm" id="btn-tracker-edit" title="Edit Accounts" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px;">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
             </button>
             <button class="btn btn-danger" id="btn-tracker-reset-stats" title="Reset Session Stats" style="padding: 6px; display: flex; align-items: center; justify-content: center; height: 32px; width: 32px;">
@@ -487,13 +487,13 @@
 <div class="modal-backdrop" id="slot-modal" style="display:none">
   <div class="modal" style="max-width: 420px; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r); backdrop-filter: var(--glass-blur-sm);">
     <div class="modal-icon" style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
-    <h2>Seleziona lo Slot</h2>
-    <p style="margin-bottom: 16px;">Scegli lo slot di Rocket Labs in cui caricare questa mappa custom:</p>
+    <h2>Select Slot</h2>
+    <p style="margin-bottom: 16px;">Choose a Rocket Labs slot to load this custom map into:</p>
     <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;" id="slot-options-container">
       <!-- Slot buttons will be added dynamically -->
     </div>
     <div class="modal-actions" style="justify-content: flex-end;">
-      <button class="btn btn-ghost btn-sm" id="btn-slot-cancel">Annulla</button>
+      <button class="btn btn-ghost btn-sm" id="btn-slot-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -503,8 +503,8 @@
   <div class="modal" style="max-width: 500px; text-align: left; background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: var(--r); backdrop-filter: var(--glass-blur-sm); display: flex; flex-direction: column; max-height: 80vh; padding: 0; overflow: hidden;">
     <div style="padding: 20px 24px 16px 24px; border-bottom: 1px solid var(--glass-border);">
       <div style="font-size: 32px; margin-bottom: 8px;">🗺️</div>
-      <h2 id="map-select-modal-title" style="margin: 0; font-size: 18px;">Seleziona la mappa da caricare</h2>
-      <p style="margin: 6px 0 0 0; color: var(--text-muted); font-size: 13px;">Scegli una mappa scaricata per rimpiazzare lo slot <strong id="map-select-slot-name" style="color: var(--accent);"></strong></p>
+      <h2 id="map-select-modal-title" style="margin: 0; font-size: 18px;">Select map to load</h2>
+      <p style="margin: 6px 0 0 0; color: var(--text-muted); font-size: 13px;">Choose a downloaded map to replace slot <strong id="map-select-slot-name" style="color: var(--accent);"></strong></p>
     </div>
     
     <div style="flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 10px; max-height: 350px;" id="map-select-options-container">
@@ -512,7 +512,7 @@
     </div>
     
     <div class="modal-actions" style="justify-content: flex-end; padding: 16px 24px 20px 24px; border-top: 1px solid var(--glass-border); margin: 0;">
-      <button class="btn btn-ghost btn-sm" id="btn-map-select-cancel">Annulla</button>
+      <button class="btn btn-ghost btn-sm" id="btn-map-select-cancel">Cancel</button>
     </div>
   </div>
 </div>
@@ -801,10 +801,10 @@
     </div>
 
     <div class="modal-actions" style="justify-content:flex-end; margin-top:20px; gap:8px;">
-      <button class="btn btn-danger-sm" id="btn-rocketstats-reset-stats" title="Azzera Win/Loss/Streak/MMR della sessione corrente" style="margin-right:auto; font-size:12px; padding:6px 14px;">
+      <button class="btn btn-danger-sm" id="btn-rocketstats-reset-stats" title="Reset Win/Loss/Streak/MMR for current session" style="margin-right:auto; font-size:12px; padding:6px 14px;">
         🗑️ Reset Stats
       </button>
-      <button class="btn btn-ghost btn-sm" id="btn-plugin-settings-close">Chiudi</button>
+      <button class="btn btn-ghost btn-sm" id="btn-plugin-settings-close">Close</button>
     </div>
   </div>
 </div>
@@ -815,8 +815,8 @@
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
       <div style="font-size:28px;">🔄</div>
       <div>
-        <h2 style="margin:0; font-size:18px;">Crea Swap Personalizzato</h2>
-        <p style="margin:0; color:var(--text-sub); font-size:13px;">Mappa un tuo oggetto standard a un file mod (.upk / .udk) personalizzato</p>
+        <h2 style="margin:0; font-size:18px;">Create Custom Swap</h2>
+        <p style="margin:0; color:var(--text-sub); font-size:13px;">Map your standard in-game item to a custom mod file (.upk / .udk)</p>
       </div>
     </div>
 
@@ -829,8 +829,8 @@
         </div>
         
         <div style="position: relative;">
-          <label for="custom-swap-search-catalog" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Cerca nel Catalogo (es. Fennec, OEM, Zomba)</label>
-          <input type="text" id="custom-swap-search-catalog" class="input" placeholder="Scrivi il nome dell'oggetto..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
+          <label for="custom-swap-search-catalog" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Search Catalog (e.g. Fennec, OEM, Zomba)</label>
+          <input type="text" id="custom-swap-search-catalog" class="input" placeholder="Type item name..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
           
           <!-- Search results dropdown -->
           <div id="custom-swap-catalog-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f121d; border: 1px solid var(--glass-border); border-radius: var(--r-sm); max-height: 160px; overflow-y: auto; z-index: 1000; margin-top: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
@@ -839,38 +839,38 @@
         </div>
 
         <div>
-          <label for="custom-swap-target-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Nome file di gioco (.upk)</label>
-          <input type="text" id="custom-swap-target-input" class="input" value="Body_Octane_SF.upk" placeholder="Esempio: Body_Octane_SF.upk" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
-          <div id="custom-swap-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">Oggetto: Octane (Bodies)</div>
+          <label for="custom-swap-target-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Game file name (.upk)</label>
+          <input type="text" id="custom-swap-target-input" class="input" value="Body_Octane_SF.upk" placeholder="Example: Body_Octane_SF.upk" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
+          <div id="custom-swap-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">Item: Octane (Bodies)</div>
         </div>
       </div>
 
       <!-- Box 2: Item moddato che vuoi -->
       <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px;">
         <div style="font-weight: 700; color: #3b82f6; font-size: 13px; border-bottom: 1px dashed rgba(255,255,255,0.08); padding-bottom: 6px; display: flex; align-items: center; gap: 6px;">
-          <span>🎨</span> 2. Item moddato che vuoi (Custom)
+          <span>🎨</span> 2. Custom Modded Item
         </div>
 
         <div>
-          <label style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Seleziona file mod (.upk / .udk)</label>
+          <label style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Select mod file (.upk / .udk)</label>
           <div style="display: flex; gap: 6px;">
-            <button class="btn btn-ghost btn-sm" id="btn-custom-swap-browse" style="padding: 8px 12px; font-size: 12px; font-weight: 600;">Sfoglia...</button>
-            <span style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;">Seleziona da PC</span>
+            <button class="btn btn-ghost btn-sm" id="btn-custom-swap-browse" style="padding: 8px 12px; font-size: 12px; font-weight: 600;">Browse...</button>
+            <span style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center;">Select from PC</span>
           </div>
         </div>
 
         <div>
-          <label for="custom-swap-source-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Percorso file mod</label>
-          <input type="text" id="custom-swap-source-input" class="input" placeholder="Seleziona percorso .upk/.udk" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
-          <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Il file modded personalizzato.</span>
+          <label for="custom-swap-source-input" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Mod file path</label>
+          <input type="text" id="custom-swap-source-input" class="input" placeholder="Select .upk/.udk path" style="font-size: 12px; padding: 8px 10px; font-family: monospace;"/>
+          <span style="font-size: 10px; color: var(--text-muted); display: block; margin-top: 4px;">Custom modded file.</span>
         </div>
       </div>
     </div>
 
     <!-- Actions -->
     <div class="modal-actions" style="justify-content: flex-end;">
-      <button class="btn btn-ghost btn-sm" id="btn-custom-swap-cancel">Annulla</button>
-      <button class="btn btn-primary btn-sm" id="btn-custom-swap-apply">Applica Swap</button>
+      <button class="btn btn-ghost btn-sm" id="btn-custom-swap-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="btn-custom-swap-apply">Apply Swap</button>
     </div>
   </div>
 </div>
@@ -881,8 +881,8 @@
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
       <div style="font-size:28px;">🔄</div>
       <div>
-        <h2 style="margin:0; font-size:18px;">Crea Swap</h2>
-        <p style="margin:0; color:var(--text-sub); font-size:13px;">Seleziona quale oggetto standard sostituire con <span id="swap-target-source-name" style="font-weight:700; color:#fff;">Item</span></p>
+        <h2 style="margin:0; font-size:18px;">Create Swap</h2>
+        <p style="margin:0; color:var(--text-sub); font-size:13px;">Select which standard item to replace with <span id="swap-target-source-name" style="font-weight:700; color:#fff;">Item</span></p>
       </div>
     </div>
 
@@ -899,13 +899,13 @@
 
     <!-- Target Selection -->
     <div style="margin-bottom: 24px;">
-      <label for="swap-target-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Sostituisci questo oggetto standard in-game:</label>
+      <label for="swap-target-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Replace this standard in-game item:</label>
       <select id="swap-target-select" class="select" style="width: 100%; font-size: 13px; padding: 10px;"></select>
       
       <!-- Option to search custom target from catalog -->
       <div id="swap-target-custom-file-container" style="display:none; margin-top: 12px; position: relative;">
-        <label for="swap-target-custom-search" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Cerca nel catalogo l'oggetto da sostituire:</label>
-        <input type="text" id="swap-target-custom-search" class="input" placeholder="Scrivi il nome dell'oggetto..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
+        <label for="swap-target-custom-search" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 4px;">Search catalog for item to replace:</label>
+        <input type="text" id="swap-target-custom-search" class="input" placeholder="Type item name..." style="font-size: 12px; padding: 8px 10px;" autocomplete="off"/>
         
         <!-- Search results dropdown -->
         <div id="swap-target-custom-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: #0f121d; border: 1px solid var(--glass-border); border-radius: var(--r-sm); max-height: 160px; overflow-y: auto; z-index: 1000; margin-top: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);">
@@ -915,15 +915,15 @@
         <input type="hidden" id="swap-target-custom-file-value" value=""/>
         <input type="hidden" id="swap-target-custom-label-value" value=""/>
         
-        <div id="swap-target-custom-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">Nessun oggetto selezionato</div>
+        <div id="swap-target-custom-selected-preview" style="font-size: 11px; color: var(--accent); margin-top: 6px; font-weight: 600; line-height: 1.3;">No item selected</div>
       </div>
     </div>
 
     <!-- Paint Selection (Visible for Boosts) -->
     <div id="swap-target-paint-container" style="display:none; margin-bottom: 20px;">
-      <label for="swap-target-paint-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Colore della vernice (Paint):</label>
+      <label for="swap-target-paint-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Paint color:</label>
       <select id="swap-target-paint-select" class="select" style="width: 100%; font-size: 13px; padding: 10px;">
-        <option value="none">Nessuno (Default)</option>
+        <option value="none">None (Default)</option>
         <option value="titanium_white">Titanium White</option>
         <option value="grey">Grey</option>
         <option value="crimson">Crimson</option>
@@ -943,8 +943,8 @@
 
     <!-- Actions -->
     <div class="modal-actions" style="justify-content: flex-end;">
-      <button class="btn btn-ghost btn-sm" id="btn-swap-target-cancel">Annulla</button>
-      <button class="btn btn-primary btn-sm" id="btn-swap-target-apply">Conferma Swap</button>
+      <button class="btn btn-ghost btn-sm" id="btn-swap-target-cancel">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="btn-swap-target-apply">Confirm Swap</button>
     </div>
   </div>
 </div>
@@ -955,18 +955,18 @@
     <div class="modal-icon" style="margin-bottom: 12px; color: var(--accent);">
       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
     </div>
-    <h2 style="margin: 0 0 8px 0; font-size: 18px;" id="update-modal-title">Gestione Aggiornamenti</h2>
+    <h2 style="margin: 0 0 8px 0; font-size: 18px;" id="update-modal-title">Update Management</h2>
     <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px; line-height: 1.5;" id="update-modal-desc">
-      Verifica la presenza di nuove versioni di Ascend o reinstalla il pacchetto più recente in caso di bug.
+      Check for new versions of Ascend or reinstall the latest package in case of issues.
     </p>
     <div id="update-modal-info" style="display: none; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: var(--r-sm); margin-bottom: 20px; font-size: 12.5px;">
       <!-- Dynamic info -->
     </div>
     <div class="modal-actions" style="justify-content: flex-end; gap: 8px;">
-      <button class="btn btn-ghost btn-sm" id="btn-update-cancel">Chiudi</button>
-      <button class="btn btn-ghost btn-sm" id="btn-update-reinstall">Reinstalla Recente</button>
-      <button class="btn btn-primary btn-sm" id="btn-update-check">Verifica</button>
-      <button class="btn btn-primary btn-sm" id="btn-update-apply" style="display: none;">Aggiorna Ora</button>
+      <button class="btn btn-ghost btn-sm" id="btn-update-cancel">Close</button>
+      <button class="btn btn-ghost btn-sm" id="btn-update-reinstall">Reinstall Latest</button>
+      <button class="btn btn-primary btn-sm" id="btn-update-check">Check for Updates</button>
+      <button class="btn btn-primary btn-sm" id="btn-update-apply" style="display: none;">Update Now</button>
     </div>
   </div>
 </div>

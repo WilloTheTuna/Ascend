@@ -2689,7 +2689,7 @@ customSwapSearchInput?.addEventListener('input', async (e) => {
   try {
     const items = await rc.getCatalog({ search: query, limit: 30 });
     if (!items || items.length === 0) {
-      customSwapResultsDiv.innerHTML = '<div style="padding: 8px 12px; color: var(--text-sub); font-size: 12px; background: rgba(0,0,0,0.4);">Nessun oggetto trovato</div>';
+      customSwapResultsDiv.innerHTML = '<div style="padding: 8px 12px; color: var(--text-sub); font-size: 12px; background: rgba(0,0,0,0.4);">No items found</div>';
       customSwapResultsDiv.style.display = 'block';
       return;
     }
@@ -2772,7 +2772,7 @@ document.getElementById('btn-custom-swap-apply')?.addEventListener('click', asyn
   });
 
   if (res.ok) {
-    toast('Swap personalizzato applicato con successo!', 'success');
+    toast('Custom swap applied successfully!', 'success');
     const modal = document.getElementById('custom-swap-modal');
     if (modal) modal.style.display = 'none';
     
@@ -2782,7 +2782,7 @@ document.getElementById('btn-custom-swap-apply')?.addEventListener('click', asyn
 
     await refreshSwaps();
   } else {
-    toast(res.error || 'Errore durante l\'applicazione dello swap', 'error');
+    toast(res.error || 'Error applying swap', 'error');
   }
 });
 
@@ -2935,7 +2935,7 @@ function showSwapTargetModal(item) {
     }
     if (customFileValue) customFileValue.value = '';
     if (customLabelValue) customLabelValue.value = '';
-    if (customPreview) customPreview.textContent = 'Nessun oggetto selezionato';
+    if (customPreview) customPreview.textContent = 'No item selected';
   }
 
   const paintContainer = document.getElementById('swap-target-paint-container');
@@ -2983,7 +2983,7 @@ swapTargetCustomSearch?.addEventListener('input', async (e) => {
     if (!swapTargetCustomResults) return;
 
     if (!items || items.length === 0) {
-      swapTargetCustomResults.innerHTML = '<div style="padding: 8px 12px; color: var(--text-sub); font-size: 12px; background: rgba(0,0,0,0.4);">Nessun oggetto trovato</div>';
+      swapTargetCustomResults.innerHTML = '<div style="padding: 8px 12px; color: var(--text-sub); font-size: 12px; background: rgba(0,0,0,0.4);">No items found</div>';
       swapTargetCustomResults.style.display = 'block';
       return;
     }
@@ -3104,12 +3104,12 @@ function setupUpdaterControls() {
   btnUpdate.addEventListener('click', async () => {
     modal.style.display = 'flex';
     modalInfo.style.display = 'block';
-    modalInfo.textContent = 'Verifica in corso...';
+    modalInfo.textContent = 'Checking for updates...';
     try {
       const res = await rc.checkUpdate();
       if (res && res.hasUpdate) {
         modalInfo.innerHTML = `
-          <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">Nuova versione disponibile: v${res.version}</div>
+          <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">New version available: v${res.version}</div>
           <div style="color: var(--text-sub); font-size: 12px; margin-bottom: 6px;">${res.releaseNotes || ''}</div>
         `;
         btnApply.style.display = 'inline-block';
@@ -3118,7 +3118,7 @@ function setupUpdaterControls() {
         if (badge) badge.style.display = 'block';
       } else {
         modalInfo.innerHTML = `
-          <div style="color: var(--text-sub); font-size: 12.5px;">✓ Stai utilizzando l'ultima versione di Ascend.</div>
+          <div style="color: var(--text-sub); font-size: 12.5px;">✓ You are using the latest version of Ascend.</div>
         `;
         btnApply.style.display = 'none';
         btnCheck.style.display = 'inline-block';
@@ -3126,7 +3126,7 @@ function setupUpdaterControls() {
         if (badge) badge.style.display = 'none';
       }
     } catch (err) {
-      modalInfo.textContent = `Errore di verifica: ${err.message}`;
+      modalInfo.textContent = `Check failed: ${err.message}`;
     }
   });
 
@@ -3136,43 +3136,43 @@ function setupUpdaterControls() {
 
   btnCheck.addEventListener('click', async () => {
     modalInfo.style.display = 'block';
-    modalInfo.textContent = 'Verifica in corso...';
+    modalInfo.textContent = 'Checking for updates...';
     try {
       const res = await rc.checkUpdate();
       if (res && res.hasUpdate) {
         modalInfo.innerHTML = `
-          <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">Nuova versione disponibile: v${res.version}</div>
+          <div style="font-weight: 600; color: #fbbf24; margin-bottom: 4px;">New version available: v${res.version}</div>
           <div style="color: var(--text-sub); font-size: 12px; margin-bottom: 6px;">${res.releaseNotes || ''}</div>
         `;
         btnApply.style.display = 'inline-block';
         btnCheck.style.display = 'none';
         btnUpdate.classList.add('pulse');
         if (badge) badge.style.display = 'block';
-        toast('Aggiornamento trovato!', 'success');
+        toast('Update found!', 'success');
       } else {
         modalInfo.innerHTML = `
-          <div style="color: var(--text-sub); font-size: 12.5px;">✓ Stai utilizzando l'ultima versione di Ascend.</div>
+          <div style="color: var(--text-sub); font-size: 12.5px;">✓ You are using the latest version of Ascend.</div>
         `;
         btnApply.style.display = 'none';
         btnCheck.style.display = 'inline-block';
         btnUpdate.classList.remove('pulse');
         if (badge) badge.style.display = 'none';
-        toast('Sei già all\'ultima versione.', 'success');
+        toast('You are on the latest version.', 'success');
       }
     } catch (err) {
-      modalInfo.textContent = `Errore di verifica: ${err.message}`;
-      toast('Verifica fallita', 'error');
+      modalInfo.textContent = `Check failed: ${err.message}`;
+      toast('Check failed', 'error');
     }
   });
 
   btnReinstall.addEventListener('click', async () => {
-    toast('Avvio reinstallazione...', 'success');
+    toast('Starting reinstallation...', 'success');
     try {
       const res = await rc.reinstallCurrent();
       if (res && res.ok) {
         modal.style.display = 'none';
       } else {
-        toast(res.error || 'Reinstallazione fallita', 'error');
+        toast(res.error || 'Reinstallation failed', 'error');
       }
     } catch (err) {
       toast(err.message, 'error');
@@ -3180,13 +3180,13 @@ function setupUpdaterControls() {
   });
 
   btnApply.addEventListener('click', async () => {
-    toast('Installazione aggiornamento...', 'success');
+    toast('Installing update...', 'success');
     try {
       const res = await rc.installUpdate();
       if (res && res.ok) {
         modal.style.display = 'none';
       } else {
-        toast(res.error || 'Installazione fallita', 'error');
+        toast(res.error || 'Installation failed', 'error');
       }
     } catch (err) {
       toast(err.message, 'error');
