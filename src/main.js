@@ -591,28 +591,133 @@ ipcMain.handle('app-install-update', async () => {
     try {
       logger.info(`[Updater] Starting download from: ${downloadUrl}`);
       const fetch = require('node-fetch');
-      const res = await fetch(downloadUrl);
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-      
-      const totalBytes = parseInt(res.headers.get('content-length'), 10) || 0;
-      let downloadedBytes = 0;
+      const fs = require('fs');
+      const path = require('path');
+      const os = require('os');
+
+      let totalBytes = 0;
+      let supportsRange = false;
+
+      try {
+        // Probe size and range support via byte 0-0 range GET request
+        const probeRes = await fetch(downloadUrl, { method: 'GET', headers: { 'Range': 'bytes=0-0' } });
+        if (probeRes.status === 206) {
+          const contentRange = probeRes.headers.get('content-range');
+          if (contentRange) {
+            const totalBytesHeader = contentRange.split('/')[1];
+            totalBytes = totalBytesHeader ? parseInt(totalBytesHeader, 10) : 0;
+            supportsRange = totalBytes > 0;
+          }
+        }
+      } catch (probeErr) {
+        logger.error(`[Updater] Range probe failed: ${probeErr.message}`);
+      }
 
       const tempSetup = path.join(os.tmpdir(), `Ascend_Setup_${version || 'latest'}.exe`);
-      const fileStream = fs.createWriteStream(tempSetup);
-      
-      await new Promise((resolve, reject) => {
-        res.body.on('data', (chunk) => {
-          downloadedBytes += chunk.length;
-          if (totalBytes > 0 && mainWindow && !mainWindow.isDestroyed()) {
-            const pct = Math.min(100, Math.round((downloadedBytes / totalBytes) * 100));
-            mainWindow.webContents.send('updater-progress', { percent: pct, downloaded: downloadedBytes, total: totalBytes });
-          }
+
+      if (supportsRange) {
+        logger.info(`[Updater] Server supports Range requests. Total size: ${totalBytes} bytes. Starting multi-threaded download (6 parallel workers)...`);
+        const CHUNKS_COUNT = 6;
+        const chunkSize = Math.ceil(totalBytes / CHUNKS_COUNT);
+        const chunkPromises = [];
+        let downloadedBytes = 0;
+        const partFiles = [];
+
+        // Pre-generate temp part filenames
+        for (let i = 0; i < CHUNKS_COUNT; i++) {
+          partFiles.push(path.join(os.tmpdir(), `Ascend_Setup_${version || 'latest'}.exe.part${i}`));
+        }
+
+        for (let i = 0; i < CHUNKS_COUNT; i++) {
+          const start = i * chunkSize;
+          const end = Math.min(totalBytes - 1, start + chunkSize - 1);
+
+          const chunkPromise = (async (index, startByte, endByte) => {
+            let attempts = 3;
+            while (attempts > 0) {
+              try {
+                const res = await fetch(downloadUrl, {
+                  headers: { 'Range': `bytes=${startByte}-${endByte}` }
+                });
+                if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+                const fileStream = fs.createWriteStream(partFiles[index]);
+
+                await new Promise((resolve, reject) => {
+                  res.body.on('data', (dataChunk) => {
+                    downloadedBytes += dataChunk.length;
+
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                      const pct = Math.min(99, Math.round((downloadedBytes / totalBytes) * 100));
+                      mainWindow.webContents.send('updater-progress', {
+                        percent: pct,
+                        downloaded: downloadedBytes,
+                        total: totalBytes
+                      });
+                    }
+                  });
+                  res.body.pipe(fileStream);
+                  res.body.on('error', reject);
+                  fileStream.on('finish', resolve);
+                });
+                break; // Download chunk success!
+              } catch (chunkErr) {
+                attempts--;
+                logger.error(`[Updater] Chunk ${index} download attempt failed: ${chunkErr.message}. Attempts left: ${attempts}`);
+                if (attempts === 0) throw chunkErr;
+                await new Promise(r => setTimeout(r, 1000));
+              }
+            }
+          })(i, start, end);
+          chunkPromises.push(chunkPromise);
+        }
+
+        await Promise.all(chunkPromises);
+
+        logger.info(`[Updater] All chunks downloaded successfully. Merging part files...`);
+
+        // Stream merge sequences sequentially to avoid memory bloat
+        const finalStream = fs.createWriteStream(tempSetup);
+        for (const file of partFiles) {
+          await new Promise((resolve, reject) => {
+            const readStream = fs.createReadStream(file);
+            readStream.pipe(finalStream, { end: false });
+            readStream.on('end', () => {
+              try { fs.unlinkSync(file); } catch (_) {}
+              resolve();
+            });
+            readStream.on('error', reject);
+          });
+        }
+        await new Promise((resolve, reject) => {
+          finalStream.on('finish', resolve);
+          finalStream.on('error', reject);
+          finalStream.end();
         });
-        res.body.pipe(fileStream);
-        res.body.on('error', reject);
-        fileStream.on('finish', resolve);
-      });
-      
+
+      } else {
+        logger.info(`[Updater] Server does not support Range requests. Falling back to single-stream download.`);
+        const res = await fetch(downloadUrl);
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+
+        const totalBytesSingle = parseInt(res.headers.get('content-length'), 10) || 0;
+        let downloadedBytes = 0;
+        const fileStream = fs.createWriteStream(tempSetup);
+
+        await new Promise((resolve, reject) => {
+          res.body.on('data', (chunk) => {
+            downloadedBytes += chunk.length;
+            if (totalBytesSingle > 0 && mainWindow && !mainWindow.isDestroyed()) {
+              const pct = Math.min(99, Math.round((downloadedBytes / totalBytesSingle) * 100));
+              mainWindow.webContents.send('updater-progress', { percent: pct, downloaded: downloadedBytes, total: totalBytesSingle });
+            }
+          });
+          res.body.pipe(fileStream);
+          res.body.on('error', reject);
+          fileStream.on('finish', resolve);
+        });
+      }
+
       logger.info(`[Updater] Download complete. Executing: ${tempSetup}`);
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.webContents.send('updater-progress', { percent: 100, phase: 'installing' });
@@ -628,15 +733,15 @@ ipcMain.handle('app-install-update', async () => {
       }).catch(() => {
         exec(`"${tempSetup}"`);
       });
-      
+
       setTimeout(() => {
         app.quit();
       }, 1000);
-      
-      return { ok: true, message: 'Aggiornamento scaricato e in corso di installazione...' };
+
+      return { ok: true, message: 'Update downloaded and installing...' };
     } catch (err) {
       logger.error(`[Updater] Download failed: ${err.message}`);
-      return { ok: false, error: `Download fallito: ${err.message}` };
+      return { ok: false, error: `Download failed: ${err.message}` };
     }
   }
 
