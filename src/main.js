@@ -3,10 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
-// Optimize Chromium resource usage and enable aggressive garbage collection
-app.commandLine.appendSwitch('js-flags', '--expose-gc --max-old-space-size=256');
-app.commandLine.appendSwitch('disable-http-cache');
-app.commandLine.appendSwitch('enable-low-end-device-mode');
+// Optimize Chromium resource usage and ensure smooth background restoration
+app.commandLine.appendSwitch('js-flags', '--expose-gc --max-old-space-size=512');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
 app.commandLine.appendSwitch('enable-gpu-rasterization');
 app.commandLine.appendSwitch('enable-oop-rasterization');
 app.commandLine.appendSwitch('ignore-gpu-blocklist');
@@ -32,11 +32,7 @@ if (!gotLock) {
 } else {
   app.on('second-instance', () => {
     // Someone tried to open a second instance — focus the existing window
-    if (mainWindow) {
-      if (mainWindow.isMinimized()) mainWindow.restore();
-      mainWindow.show();
-      mainWindow.focus();
-    }
+    restoreAndShowMainWindow();
   });
 }
 
@@ -96,7 +92,7 @@ function createMainWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       webSecurity: true,
-      backgroundThrottling: true
+      backgroundThrottling: false
     },
     title: 'Ascend'
   });
@@ -236,7 +232,7 @@ function createOverlayWindow() {
       nodeIntegration: false,
       webSecurity: false,
       allowRunningInsecureContent: true,
-      backgroundThrottling: true
+      backgroundThrottling: false
     }
   });
 
@@ -324,11 +320,21 @@ function hideRoster() {
   }
 }
 
+function restoreAndShowMainWindow() {
+  if (!mainWindow) {
+    createMainWindow();
+    return;
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.show();
+  mainWindow.focus();
+}
+
 function createTray() {
   const icon = nativeImage.createFromPath(path.join(__dirname, '../assets/tray.png'));
   tray = new Tray(icon.resize({ width: 16, height: 16 }));
   const menu = Menu.buildFromTemplate([
-    { label: 'Open Ascend', click: () => mainWindow ? mainWindow.show() : createMainWindow() },
+    { label: 'Open Ascend', click: () => restoreAndShowMainWindow() },
     { label: 'Toggle Overlay', click: () => {
       if (overlayWindow) {
         if (isOverlayIntendedVisible) {
@@ -345,7 +351,7 @@ function createTray() {
   ]);
   tray.setContextMenu(menu);
   tray.setToolTip('Ascend');
-  tray.on('double-click', () => mainWindow ? mainWindow.show() : createMainWindow());
+  tray.on('double-click', () => restoreAndShowMainWindow());
 }
 
 app.whenReady().then(async () => {
