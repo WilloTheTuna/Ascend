@@ -527,7 +527,9 @@ function applySettings(s) {
   optShowPl    = s.showPlaylist !== false;
   optHoldToShow = s.holdToShow !== false;
   optEnabled   = s.enabled !== false;
-  optScale     = s.scaleMultiplier !== undefined ? s.scaleMultiplier : 1.0;
+  const uiFactor = (s.uiScalePercent !== undefined ? s.uiScalePercent : 100) / 100;
+  const baseScaleMult = s.scaleMultiplier !== undefined ? s.scaleMultiplier : 1.0;
+  optScale     = baseScaleMult * uiFactor;
   optOffsetX   = s.offsetX !== undefined ? s.offsetX : 0;
   optOffsetY   = s.offsetY !== undefined ? s.offsetY : 0;
   optOffsetXBlue = s.offsetXBlue !== undefined ? s.offsetXBlue : 0;
