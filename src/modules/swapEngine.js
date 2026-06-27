@@ -889,6 +889,7 @@ class SwapEngine extends EventEmitter {
           processed++;
           continue;
         }
+        const nameLower = name.toLowerCase();
 
         try {
           const url = this.getRlgUrl(name, item.category);
