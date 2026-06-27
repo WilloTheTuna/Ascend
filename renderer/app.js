@@ -3241,6 +3241,26 @@ function setupUpdaterControls() {
     }
   });
 
+  // Real progress listener from main process
+  if (window.rc && window.rc.on) {
+    window.rc.on('updater-progress', (data) => {
+      const progressBar = document.getElementById('update-progress-bar');
+      const progressPct = document.getElementById('update-progress-pct');
+      const progressLabel = document.getElementById('update-progress-label');
+      if (data.percent !== undefined) {
+        if (progressBar) progressBar.style.width = data.percent + '%';
+        if (progressPct) progressPct.textContent = data.percent + '%';
+      }
+      if (data.phase === 'installing') {
+        if (progressLabel) progressLabel.textContent = 'Installing... The app will restart.';
+      } else if (data.downloaded && data.total) {
+        const mb = (data.downloaded / (1024 * 1024)).toFixed(1);
+        const totalMb = (data.total / (1024 * 1024)).toFixed(1);
+        if (progressLabel) progressLabel.textContent = `Downloading update... (${mb} / ${totalMb} MB)`;
+      }
+    });
+  }
+
   btnApply.addEventListener('click', async () => {
     const progressWrap = document.getElementById('update-progress-wrap');
     const progressBar = document.getElementById('update-progress-bar');
@@ -3253,28 +3273,16 @@ function setupUpdaterControls() {
     btnReinstall.style.display = 'none';
     btnCancel.disabled = true;
     if (progressWrap) progressWrap.style.display = 'block';
-
-    // Animate a smooth fake progress (download phase: 0→85% in ~8s)
-    let pct = 0;
-    const interval = setInterval(() => {
-      if (pct < 85) {
-        pct += Math.random() * 3 + 0.5;
-        if (pct > 85) pct = 85;
-        if (progressBar) progressBar.style.width = pct + '%';
-        if (progressPct) progressPct.textContent = Math.round(pct) + '%';
-        if (progressLabel) progressLabel.textContent = pct < 50 ? 'Downloading update...' : 'Preparing installer...';
-      }
-    }, 150);
+    if (progressBar) progressBar.style.width = '0%';
+    if (progressPct) progressPct.textContent = '0%';
+    if (progressLabel) progressLabel.textContent = 'Starting update download...';
 
     try {
       const res = await rc.installUpdate();
-      clearInterval(interval);
-      // Jump to 100%
-      if (progressBar) progressBar.style.width = '100%';
-      if (progressPct) progressPct.textContent = '100%';
-      if (progressLabel) progressLabel.textContent = 'Installing... The app will restart.';
       if (res && res.ok) {
-        // App will close and restart automatically
+        if (progressBar) progressBar.style.width = '100%';
+        if (progressPct) progressPct.textContent = '100%';
+        if (progressLabel) progressLabel.textContent = 'Installing... The app will restart.';
       } else {
         if (progressWrap) progressWrap.style.display = 'none';
         btnApply.style.display = 'inline-block';
@@ -3283,7 +3291,6 @@ function setupUpdaterControls() {
         toast(res?.error || 'Installation failed', 'error');
       }
     } catch (err) {
-      clearInterval(interval);
       if (progressWrap) progressWrap.style.display = 'none';
       btnApply.style.display = 'inline-block';
       btnReinstall.style.display = 'inline-block';

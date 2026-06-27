@@ -594,24 +594,44 @@ ipcMain.handle('app-install-update', async () => {
       const res = await fetch(downloadUrl);
       if (!res.ok) throw new Error(`HTTP error ${res.status}`);
       
+      const totalBytes = parseInt(res.headers.get('content-length'), 10) || 0;
+      let downloadedBytes = 0;
+
       const tempSetup = path.join(os.tmpdir(), `Ascend_Setup_${version || 'latest'}.exe`);
       const fileStream = fs.createWriteStream(tempSetup);
       
       await new Promise((resolve, reject) => {
+        res.body.on('data', (chunk) => {
+          downloadedBytes += chunk.length;
+          if (totalBytes > 0 && mainWindow && !mainWindow.isDestroyed()) {
+            const pct = Math.min(100, Math.round((downloadedBytes / totalBytes) * 100));
+            mainWindow.webContents.send('updater-progress', { percent: pct, downloaded: downloadedBytes, total: totalBytes });
+          }
+        });
         res.body.pipe(fileStream);
         res.body.on('error', reject);
         fileStream.on('finish', resolve);
       });
       
       logger.info(`[Updater] Download complete. Executing: ${tempSetup}`);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('updater-progress', { percent: 100, phase: 'installing' });
+      }
+
       const { shell } = require('electron');
+      const { exec } = require('child_process');
       shell.openPath(tempSetup).then(err => {
-        if (err) logger.error(`[Updater] shell.openPath failed: ${err}`);
+        if (err) {
+          logger.error(`[Updater] shell.openPath failed (${err}), falling back to exec`);
+          exec(`"${tempSetup}"`);
+        }
+      }).catch(() => {
+        exec(`"${tempSetup}"`);
       });
       
       setTimeout(() => {
         app.quit();
-      }, 800);
+      }, 1000);
       
       return { ok: true, message: 'Aggiornamento scaricato e in corso di installazione...' };
     } catch (err) {
