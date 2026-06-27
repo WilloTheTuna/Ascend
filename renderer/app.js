@@ -3188,15 +3188,52 @@ function setupUpdaterControls() {
   });
 
   btnApply.addEventListener('click', async () => {
-    toast('Installing update...', 'success');
+    const progressWrap = document.getElementById('update-progress-wrap');
+    const progressBar = document.getElementById('update-progress-bar');
+    const progressPct = document.getElementById('update-progress-pct');
+    const progressLabel = document.getElementById('update-progress-label');
+
+    // Show progress bar, hide action buttons
+    btnApply.style.display = 'none';
+    btnCheck.style.display = 'none';
+    btnReinstall.style.display = 'none';
+    btnCancel.disabled = true;
+    if (progressWrap) progressWrap.style.display = 'block';
+
+    // Animate a smooth fake progress (download phase: 0→85% in ~8s)
+    let pct = 0;
+    const interval = setInterval(() => {
+      if (pct < 85) {
+        pct += Math.random() * 3 + 0.5;
+        if (pct > 85) pct = 85;
+        if (progressBar) progressBar.style.width = pct + '%';
+        if (progressPct) progressPct.textContent = Math.round(pct) + '%';
+        if (progressLabel) progressLabel.textContent = pct < 50 ? 'Downloading update...' : 'Preparing installer...';
+      }
+    }, 150);
+
     try {
       const res = await rc.installUpdate();
+      clearInterval(interval);
+      // Jump to 100%
+      if (progressBar) progressBar.style.width = '100%';
+      if (progressPct) progressPct.textContent = '100%';
+      if (progressLabel) progressLabel.textContent = 'Installing... The app will restart.';
       if (res && res.ok) {
-        modal.style.display = 'none';
+        // App will close and restart automatically
       } else {
-        toast(res.error || 'Installation failed', 'error');
+        if (progressWrap) progressWrap.style.display = 'none';
+        btnApply.style.display = 'inline-block';
+        btnReinstall.style.display = 'inline-block';
+        btnCancel.disabled = false;
+        toast(res?.error || 'Installation failed', 'error');
       }
     } catch (err) {
+      clearInterval(interval);
+      if (progressWrap) progressWrap.style.display = 'none';
+      btnApply.style.display = 'inline-block';
+      btnReinstall.style.display = 'inline-block';
+      btnCancel.disabled = false;
       toast(err.message, 'error');
     }
   });
