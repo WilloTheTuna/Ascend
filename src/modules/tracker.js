@@ -60,6 +60,10 @@ class TrackerModule extends EventEmitter {
     this._loadLocalRankIcons();
   }
 
+  get isGameRunning() {
+    return !!(this.isTcpConnected || this.isWsConnected || this.inMatch || this._hasStatsApiData);
+  }
+
   _loadLocalRankIcons() {
     this._localRankIconsBase64 = {};
     const tiersDir = path.join(this.appData, 'assets', 'IngameRank', 'Tiers');
@@ -1970,6 +1974,7 @@ class TrackerModule extends EventEmitter {
       this.logger.info(`[tracker] Connected to Rocket League Stats API on port ${port}!`);
       this.isTcpConnected = true;
       this._hasLoggedTcpConnecting = false;
+      this.emit('game-connected');
     });
 
     client.on('data', async (data) => {
@@ -2019,10 +2024,14 @@ class TrackerModule extends EventEmitter {
     });
 
     client.on('close', () => {
-      if (this.isTcpConnected) {
+      const wasConnected = this.isTcpConnected;
+      if (wasConnected) {
         this.logger.info('[tracker] Rocket League Stats API connection closed');
       }
       this.isTcpConnected = false;
+      if (wasConnected && !this.isGameRunning) {
+        this.emit('game-disconnected');
+      }
       this._tcpReconnectTimeout = setTimeout(() => this._connectLocalStatsApi(), 2000);
     });
 

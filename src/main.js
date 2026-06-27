@@ -44,6 +44,8 @@ let noMatchWindow = null;
 let tray = null;
 let isOverlayIntendedVisible = true;
 let isRosterIntendedVisible = false;
+let isOverlayForcePreview = false;
+let isRosterForcePreview = false;
 
 // Ensure app data dirs exist
 const dirs = ['Backups/Epic', 'BallPacks', 'DecalPacks', 'HudMeterPacks', 'plugins', 'logs', 'workshop', 'thumbnails', 'assets/IngameRank'];
@@ -285,17 +287,20 @@ function showOverlay() {
     createOverlayWindow();
     return;
   }
-  overlayWindow.show();
-  overlayWindow.webContents.send('overlay-show');
-  overlayWindow.webContents.send('tracker-update', tracker.getSession());
+  if (tracker.isGameRunning || isOverlayForcePreview) {
+    overlayWindow.show();
+    overlayWindow.webContents.send('overlay-show');
+    overlayWindow.webContents.send('tracker-update', tracker.getSession());
+  }
 }
 
 function hideOverlay() {
   isOverlayIntendedVisible = false;
   if (!overlayWindow) return;
+  if (isOverlayForcePreview) return;
   overlayWindow.webContents.send('overlay-hide');
   setTimeout(() => {
-    if (!isOverlayIntendedVisible && overlayWindow && !overlayWindow.isDestroyed()) {
+    if (!isOverlayIntendedVisible && overlayWindow && !overlayWindow.isDestroyed() && !isOverlayForcePreview) {
       overlayWindow.hide();
     }
   }, 220);
@@ -303,6 +308,7 @@ function hideOverlay() {
 
 function showRoster() {
   isRosterIntendedVisible = true;
+  if (!tracker.isGameRunning && !isRosterForcePreview) return;
   if (rosterWindow && !rosterWindow.isDestroyed()) {
     rosterWindow.webContents.send('overlay-show');
   }
@@ -313,6 +319,7 @@ function showRoster() {
 
 function hideRoster() {
   isRosterIntendedVisible = false;
+  if (isRosterForcePreview) return;
   if (rosterWindow && !rosterWindow.isDestroyed()) {
     rosterWindow.webContents.send('overlay-hide');
   }
@@ -430,6 +437,17 @@ app.whenReady().then(async () => {
 
   tracker.on('local-player-login', (data) => {
     if (mainWindow) mainWindow.webContents.send('local-player-login', data);
+  });
+
+  tracker.on('game-connected', () => {
+    logger.info('[main] Game connected - showing active overlays');
+    showOverlay();
+  });
+
+  tracker.on('game-disconnected', () => {
+    logger.info('[main] Game disconnected - hiding active overlays');
+    if (!isOverlayForcePreview) hideOverlay();
+    if (!isRosterForcePreview) hideRoster();
   });
 
   // Roster overlay events
@@ -758,6 +776,7 @@ ipcMain.on('roster-toggle', () => {
 });
 
 ipcMain.on('roster-force-show', () => {
+  isRosterForcePreview = true;
   if (rosterWindow && !rosterWindow.isDestroyed()) {
     rosterWindow.webContents.send('force-preview', true);
     showRoster();
@@ -765,11 +784,33 @@ ipcMain.on('roster-force-show', () => {
 });
 
 ipcMain.on('roster-force-hide', () => {
+  isRosterForcePreview = false;
   if (rosterWindow && !rosterWindow.isDestroyed()) {
     rosterWindow.webContents.send('force-preview', false);
     const cfg = settings.load();
-    if (cfg.ingameRankHoldToShow !== false) {
+    if (cfg.ingameRankHoldToShow !== false || !tracker.isGameRunning) {
       hideRoster();
+    }
+  }
+});
+
+ipcMain.on('overlay-force-show', () => {
+  isOverlayForcePreview = true;
+  if (!overlayWindow) createOverlayWindow();
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.show();
+    overlayWindow.webContents.send('force-preview', true);
+    overlayWindow.webContents.send('overlay-show');
+    overlayWindow.webContents.send('tracker-update', tracker.getSession());
+  }
+});
+
+ipcMain.on('overlay-force-hide', () => {
+  isOverlayForcePreview = false;
+  if (overlayWindow && !overlayWindow.isDestroyed()) {
+    overlayWindow.webContents.send('force-preview', false);
+    if (!tracker.isGameRunning) {
+      hideOverlay();
     }
   }
 });

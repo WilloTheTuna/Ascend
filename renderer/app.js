@@ -1317,6 +1317,7 @@ async function openPluginSettings(pluginId) {
   if (pluginId.toLowerCase() === 'rocketstats') {
     rsSection.style.display = 'block';
     subtitle.textContent = 'Seleziona il tema dell\'overlay RocketStats';
+    if (window.rc && window.rc.forceShowOverlay) window.rc.forceShowOverlay();
 
     const res = await rc.getBakkesPluginSettings('rocketstats');
     if (!res.ok) {
@@ -1978,12 +1979,14 @@ function setupPluginSettingsModal() {
   const modal = document.getElementById('plugin-settings-modal');
   if (closeBtn) closeBtn.addEventListener('click', () => { 
     modal.style.display = 'none'; 
-    rc.forceHideRoster();
+    if (window.rc && window.rc.forceHideRoster) window.rc.forceHideRoster();
+    if (window.rc && window.rc.forceHideOverlay) window.rc.forceHideOverlay();
   });
   if (modal) modal.addEventListener('click', (e) => { 
     if (e.target === modal) {
       modal.style.display = 'none'; 
-      rc.forceHideRoster();
+      if (window.rc && window.rc.forceHideRoster) window.rc.forceHideRoster();
+      if (window.rc && window.rc.forceHideOverlay) window.rc.forceHideOverlay();
     }
   });
 

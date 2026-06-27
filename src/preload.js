@@ -94,6 +94,8 @@ contextBridge.exposeInMainWorld('rc', {
 
   // Overlay
   toggleOverlay:         () => ipcRenderer.send('overlay-toggle'),
+  forceShowOverlay:      () => ipcRenderer.send('overlay-force-show'),
+  forceHideOverlay:      () => ipcRenderer.send('overlay-force-hide'),
   setOverlayMouseIgnore: (ignore) => ipcRenderer.send('overlay-set-ignore-mouse', ignore),
 
   // Renderer logging

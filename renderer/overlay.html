@@ -43,7 +43,8 @@ let hasTrackerData = false;
 let showMmrDelta = false;
 
 // ── IPC: riceve la config dal main process ────────────────────────
-if (window.rc && window.rc.on) {
+function setupOverlayListeners() {
+  if (!window.rc || !window.rc.on) return;
   window.rc.on('overlay-init', init);
   window.rc.on('overlay-hide', () => {
     const container = document.getElementById('overlay-container');
@@ -59,27 +60,28 @@ if (window.rc && window.rc.on) {
       });
     }
   });
+  window.rc.on('force-preview', (val) => {
+    const container = document.getElementById('overlay-container');
+    if (val) {
+      if (!STATS || !STATS.MMR) {
+        STATS = { MMR:'1050', MMRCumulChange:'+18', Win:'5', Loss:'2', Streak:'3', Rank:'Champion I', Div:'Division II', GameMode:'Doubles' };
+      }
+      if (container) container.classList.add('visible');
+      render();
+    } else {
+      if (container) container.classList.remove('visible');
+    }
+  });
   window.rc.on('tracker-update', updateStats);
+}
+
+if (window.rc && window.rc.on) {
+  setupOverlayListeners();
 } else {
   const t = setInterval(() => {
     if (!window.rc || !window.rc.on) return;
     clearInterval(t);
-    window.rc.on('overlay-init', init);
-    window.rc.on('overlay-hide', () => {
-      const container = document.getElementById('overlay-container');
-      if (container) container.classList.remove('visible');
-    });
-    window.rc.on('overlay-show', () => {
-      const container = document.getElementById('overlay-container');
-      if (container) {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            container.classList.add('visible');
-          });
-        });
-      }
-    });
-    window.rc.on('tracker-update', updateStats);
+    setupOverlayListeners();
   }, 20);
 }
 
