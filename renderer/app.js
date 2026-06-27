@@ -282,12 +282,12 @@ async function fetchAndRenderCatalog(resetLimit = false) {
     if (countText) {
       rc.getMissingThumbnailsInfo().then(info => {
         if (info && info.totalCatalog) {
-          countText.textContent = `${catalog.length.toLocaleString('it-IT')} di ${info.totalCatalog.toLocaleString('it-IT')}`;
+          countText.textContent = `${info.downloadedCount.toLocaleString('it-IT')} / ${info.totalCatalog.toLocaleString('it-IT')}`;
         } else {
-          countText.textContent = `${catalog.length}`;
+          countText.textContent = `0 / 0`;
         }
       }).catch(() => {
-        countText.textContent = `${catalog.length}`;
+        countText.textContent = `0 / 0`;
       });
     }
 

@@ -453,11 +453,30 @@ class SwapEngine extends EventEmitter {
     }
 
     if (opts.search) {
-      const query = opts.search.toLowerCase();
+      const query = opts.search.toLowerCase().trim();
+      const ALIASES = {
+        'miku': ['miku', 'future', 'vocaloid', 'hatsune', 'animesmoke', 'anime', 'futureutopia', 'futureglasses', 'futurewave'],
+        'hatsune': ['miku', 'future', 'vocaloid', 'hatsune', 'animesmoke', 'anime'],
+        'vocaloid': ['miku', 'future', 'vocaloid', 'hatsune', 'animesmoke', 'anime'],
+        'mcqueen': ['kachow', 'mcqueen', 'rusteze', '95'],
+        'lightning': ['kachow', 'mcqueen', 'rusteze', '95'],
+        'nissan': ['skyline', 'nissan', 'gtr'],
+        'skyline': ['skyline', 'nissan', 'gtr'],
+        'porsche': ['porsche', 'germansports', '911'],
+        'lambo': ['lambo', 'lamborghini', 'bull', 'huracan', 'countach'],
+        'lamborghini': ['lambo', 'lamborghini', 'bull', 'huracan', 'countach'],
+        'ferrari': ['ferrari', 'redsports', '296'],
+        'bmw': ['bmw', 'bavaria', 'm2', 'i4'],
+        'cybertruck': ['cyber', 'cybertruck', 'tesla'],
+        'tesla': ['cyber', 'cybertruck', 'tesla']
+      };
+
+      const searchTerms = ALIASES[query] || [query];
+
       list = list.filter(item => {
         const label = (item.label || item.name || '').toLowerCase();
         const code = (item.code || item.id || '').toLowerCase();
-        return label.includes(query) || code.includes(query);
+        return searchTerms.some(term => label.includes(term) || code.includes(term));
       });
     }
 
@@ -674,15 +693,23 @@ class SwapEngine extends EventEmitter {
     this.scanLocalCookedPCForNewItems();
     if (!this.thumbnailsMap) this.thumbnailsMap = {};
     const SKIP_CATEGORIES = new Set(['Anthems']);
-    const missing = this.catalog.filter(item => {
-      if (SKIP_CATEGORIES.has(item.category)) return false;
+    let downloadedCount = 0;
+    const missing = [];
+
+    for (const item of this.catalog) {
+      if (SKIP_CATEGORIES.has(item.category)) continue;
       const key = (item.name || '').toLowerCase();
-      return this.thumbnailsMap[key] === undefined;
-    });
+      if (this.thumbnailsMap[key]) {
+        downloadedCount++;
+      } else if (this.thumbnailsMap[key] === undefined) {
+        missing.push(item);
+      }
+    }
+
     const missingCount = missing.length;
-    // Estimate download weight (approx 25KB per icon)
     const weightMB = (missingCount * 0.025).toFixed(1);
     return {
+      downloadedCount,
       missingCount,
       weightMB,
       totalCatalog: this.catalog.length
