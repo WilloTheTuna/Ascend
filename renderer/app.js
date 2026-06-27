@@ -1284,7 +1284,7 @@ async function openPluginSettings(pluginId) {
   themeGrid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Loading themes...</div>';
 
   title.textContent = `${pluginId} — Settings`;
-  subtitle.textContent = 'Configura le opzioni del plugin';
+  subtitle.textContent = 'Configure plugin options';
   modal.style.display = 'flex';
 
   if (pluginId.toLowerCase() === 'rocketstats') {
@@ -1547,7 +1547,7 @@ async function openPluginSettings(pluginId) {
 
   if (pluginId.toLowerCase() === 'ingamerank') {
     if (igrSection) igrSection.style.display = 'block';
-    subtitle.textContent = "Configura i parametri dell'overlay IngameRank";
+    subtitle.textContent = "Configure IngameRank overlay parameters";
     themeGrid.innerHTML = '';
 
     rc.forceShowRoster();
