@@ -6,7 +6,7 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "build": "electron-builder && node scripts/copy-setup.js"
+    "build": "electron-builder && node scripts/copy-setup.js && node scripts/publish-release.js"
   },
   "author": "Willo",
   "license": "MIT",
