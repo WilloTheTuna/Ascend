@@ -46,6 +46,8 @@ class TrackerModule extends EventEmitter {
     this._hasStatsApiData = false;
     this._tcpClient = null;
     this._tcpReconnectTimeout = null;
+    this._isRlProcessRunning = false;
+    this._lastProcessCheck = 0;
     // Roster overlay state
     this._rosterMap = {};           // playerId -> { name, mmr, tier, division, rankName, divisionName, peak, team, isLocal }
     this._pendingPlayerIds = [];    // queue of Uncached PlatformIds waiting for UpdatePlayerName
@@ -61,7 +63,7 @@ class TrackerModule extends EventEmitter {
   }
 
   get isGameRunning() {
-    return !!(this.isTcpConnected || this.isWsConnected || this.inMatch || this._hasStatsApiData);
+    return !!(this.isTcpConnected || this.isWsConnected || this.inMatch || this._hasStatsApiData || this._isRlProcessRunning);
   }
 
   _loadLocalRankIcons() {
@@ -361,6 +363,25 @@ class TrackerModule extends EventEmitter {
   }
 
   async _pollLaunchLog() {
+    const now = Date.now();
+    if (now - this._lastProcessCheck > 10000) {
+      this._lastProcessCheck = now;
+      const { exec } = require('child_process');
+      exec('tasklist /FI "IMAGENAME eq RocketLeague.exe" /NH', (err, stdout) => {
+        const running = !err && stdout && stdout.toLowerCase().includes('rocketleague.exe');
+        if (running !== this._isRlProcessRunning) {
+          this._isRlProcessRunning = running;
+          this.logger.info(`[tracker] Rocket League process running status changed: ${running}`);
+          this.emit('update', this._buildUpdate());
+          if (running) {
+            this.emit('game-connected');
+          } else {
+            this.emit('game-disconnected');
+          }
+        }
+      });
+    }
+
     if (!fs.existsSync(this._launchLogPath)) return;
     try {
       const stat = fs.statSync(this._launchLogPath);
@@ -814,8 +835,8 @@ class TrackerModule extends EventEmitter {
         this.logger.warn(`[roster] Failed to trigger overview page fetch for ${playerName}: ${err.message}`);
       }
 
-      // Aspettiamo 800ms affinché tracker.gg finisca la sincronizzazione con PsyNet in background
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Aspettiamo 2000ms affinché tracker.gg finisca la sincronizzazione con PsyNet in background
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const url = `https://api.tracker.gg/api/v2/rocket-league/standard/profile/${trackerPlatform}/${encodeURIComponent(queryIdentifier)}?t=${Date.now()}`;
       
