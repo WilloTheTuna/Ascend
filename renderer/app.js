@@ -357,7 +357,8 @@ function getCategoryFallbackEmoji(category) {
     'PaintFinishes': '🖌️',
     'PlayerBanners': '🚩',
     'Trails': '⚡',
-    'Wheels': '🛞'
+    'Wheels': '🛞',
+    'Anthems': '🎵'
   };
   return fallbackEmojis[category] || '📦';
 }
