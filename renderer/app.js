@@ -1800,14 +1800,15 @@ async function openPluginSettings(pluginId) {
 
     const getCalibratedDefault = (scalePercent, key) => {
       const s = scalePercent !== undefined ? scalePercent : 100;
-      if (key === 'offsetX') return -60;
+      // Baselines: 90%→(X=-80, YBlue=3, YOrange=3), 100%→(X=-80, YBlue=8, YOrange=3)
+      if (key === 'offsetX') return -80;
       if (key === 'offsetYBlue') {
-        // LERP: 0 at 90%, 3 at 100%
-        return Math.round(0 + ((s - 90) / 10) * (3 - 0));
+        // LERP: 3 at 90%, 8 at 100%
+        return Math.round(3 + ((s - 90) / 10) * (8 - 3));
       }
       if (key === 'offsetYOrange') {
-        // LERP: 0 at 90%, -2 at 100%
-        return Math.round(0 + ((s - 90) / 10) * (-2 - 0));
+        // Constant: 3 at both 90% and 100%
+        return 3;
       }
       return 0;
     };
@@ -2185,14 +2186,15 @@ function setupPluginsListeners() {
     try {
       const getCalibratedDefault = (scalePercent, key) => {
         const s = scalePercent !== undefined ? scalePercent : 100;
-        if (key === 'offsetX') return -60;
+        // Baselines: 90%→(X=-80, YBlue=3, YOrange=3), 100%→(X=-80, YBlue=8, YOrange=3)
+        if (key === 'offsetX') return -80;
         if (key === 'offsetYBlue') {
-          // LERP: 0 at 90%, 3 at 100%
-          return Math.round(0 + ((s - 90) / 10) * (3 - 0));
+          // LERP: 3 at 90%, 8 at 100%
+          return Math.round(3 + ((s - 90) / 10) * (8 - 3));
         }
         if (key === 'offsetYOrange') {
-          // LERP: 0 at 90%, -2 at 100%
-          return Math.round(0 + ((s - 90) / 10) * (-2 - 0));
+          // Constant: 3 at both 90% and 100%
+          return 3;
         }
         return 0;
       };

@@ -256,6 +256,13 @@ function createOverlayWindow() {
   });
 
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+
+  // Re-assert always-on-top after any fullscreen transition (e.g. F11 in another app)
+  overlayWindow.on('hide', () => {
+    if (overlayWindow && !overlayWindow.isDestroyed()) {
+      overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+  });
 }
 
 function reloadOverlayTheme() {
@@ -1705,7 +1712,8 @@ function updateRosterWindowFromSettings() {
 
   if (cfg.ingameRankHoldToShow !== false) {
     startInputListener();
-    if (rosterWindow && !rosterWindow.isDestroyed()) {
+    // Don't hide if force-preview is active (settings panel open)
+    if (!isRosterForcePreview && rosterWindow && !rosterWindow.isDestroyed()) {
       hideRoster();
     }
   } else {

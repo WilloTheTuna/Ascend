@@ -43,12 +43,12 @@ const DEFAULTS = {
   ingameRankHotkey: 'Tab',
   ingameRankControllerButton: 32, // Back button (Scoreboard default on controller)
   ingameRankScaleMultiplier: 1.00,
-  ingameRankOffsetX: -60,
+  ingameRankOffsetX: -80,
   ingameRankOffsetY: 0,
   ingameRankOffsetXBlue: 0,
-  ingameRankOffsetYBlue: 3,
+  ingameRankOffsetYBlue: 8,
   ingameRankOffsetXOrange: 0,
-  ingameRankOffsetYOrange: -2,
+  ingameRankOffsetYOrange: 3,
   ingameRankUiScalePercent: 100
 };
 
@@ -62,13 +62,14 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v9: Update IngameRank scale multiplier to new 1.00 base
-        if (!saved.configVersion || saved.configVersion < 9) {
-          saved.configVersion = 9;
+        // Migration v10: Recalibrate IngameRank offsets using correct baselines from user screenshots
+        // 90%: X=-80, YBlue=3, YOrange=3 | 100%: X=-80, YBlue=8, YOrange=3
+        if (!saved.configVersion || saved.configVersion < 10) {
+          saved.configVersion = 10;
           const s = saved.ingameRankUiScalePercent !== undefined ? saved.ingameRankUiScalePercent : 100;
-          saved.ingameRankOffsetX = -60;
-          saved.ingameRankOffsetYBlue = Math.round(0 + ((s - 90) / 10) * (3 - 0));
-          saved.ingameRankOffsetYOrange = Math.round(0 + ((s - 90) / 10) * (-2 - 0));
+          saved.ingameRankOffsetX = -80;
+          saved.ingameRankOffsetYBlue = Math.round(3 + ((s - 90) / 10) * (8 - 3));
+          saved.ingameRankOffsetYOrange = 3;
           saved.ingameRankScaleMultiplier = parseFloat((1.00 * (s / 100)).toFixed(2));
           try {
             fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
