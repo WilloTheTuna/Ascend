@@ -727,6 +727,12 @@ class SwapEngine extends EventEmitter {
               if (this.thumbnailsMap[translated] === '') delete this.thumbnailsMap[translated];
             }
           }
+          // Self-heal cache: delete any generic question marks or wrong engine.png matches
+          for (const [k, v] of Object.entries(this.thumbnailsMap)) {
+            if (v && (v.includes('bd07f7dd801478026052.png') || v.includes('engine.png'))) {
+              delete this.thumbnailsMap[k];
+            }
+          }
         }
         this.logger.info(`SwapEngine: Loaded thumbnails map from cache (${Object.keys(this.thumbnailsMap).length} items)`);
         return;
@@ -816,12 +822,12 @@ class SwapEngine extends EventEmitter {
   isThumbnailPresent(name, category) {
     if (!this.thumbnailsMap) return false;
     const key = name.toLowerCase();
-    if (this.thumbnailsMap[key] !== undefined && this.thumbnailsMap[key] !== '') return true;
+    if (this.thumbnailsMap[key] !== undefined) return true;
 
     // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
     if (category === 'Decals' && name.includes(':')) {
       const decalName = name.split(':')[1].trim().toLowerCase();
-      if (this.thumbnailsMap[decalName] !== undefined && this.thumbnailsMap[decalName] !== '') {
+      if (this.thumbnailsMap[decalName] !== undefined) {
         return true;
       }
     }
@@ -1096,11 +1102,11 @@ class SwapEngine extends EventEmitter {
         throw new Error(`Status ${res.status}`);
       }
       const data = await res.text();
-      // Allow relative URLs, any alphanumeric hash/filename characters
-      const imgRegex = /(?:https:\/\/rocket-league\.com)?\/content\/media\/items\/avatar\/220px\/[a-zA-Z0-9_-]+\.png/i;
-      const match = data.match(imgRegex);
+      // Match the main item image via og:image or twitter:image meta tags to prevent matching random related design/ad images
+      const match = data.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) || 
+                    data.match(/<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i);
       if (match) {
-        let imgUrl = match[0];
+        let imgUrl = match[1];
         if (!imgUrl.startsWith('http')) {
           imgUrl = 'https://rocket-league.com' + imgUrl;
         }
