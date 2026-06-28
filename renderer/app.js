@@ -1801,7 +1801,7 @@ async function openPluginSettings(pluginId) {
     const getCalibratedDefault = (scalePercent, key) => {
       if (scalePercent === 90) {
         if (key === 'offsetX') return -60;
-        if (key === 'offsetYBlue') return 7;
+        if (key === 'offsetYBlue') return -7;
         if (key === 'offsetYOrange') return 0;
       }
       if (scalePercent === 100) {
