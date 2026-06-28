@@ -62,11 +62,18 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v4: Set UI scale defaults to 100
-        if (!saved.configVersion || saved.configVersion < 4) {
-          saved.configVersion = 4;
-          saved.ingameRankUiScalePercent = 100;
-          saved.rocketStatsUiScalePercent = 100;
+        // Migration v5: Reset offset baselines for 90% and 100% UI scales to match new calibrations
+        if (!saved.configVersion || saved.configVersion < 5) {
+          saved.configVersion = 5;
+          if (saved.ingameRankUiScalePercent === 90) {
+            saved.ingameRankOffsetX = -60;
+            saved.ingameRankOffsetYBlue = -7;
+            saved.ingameRankOffsetYOrange = 0;
+          } else {
+            saved.ingameRankOffsetX = -60;
+            saved.ingameRankOffsetYBlue = 0;
+            saved.ingameRankOffsetYOrange = 0;
+          }
           try {
             fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
           } catch (_) {}
