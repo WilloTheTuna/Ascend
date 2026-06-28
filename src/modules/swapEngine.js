@@ -736,10 +736,18 @@ class SwapEngine extends EventEmitter {
             }
           }
           // Self-heal cache: delete any generic question marks or wrong engine.png matches
+          let changed = false;
           for (const [k, v] of Object.entries(this.thumbnailsMap)) {
-            if (v && (v.includes('bd07f7dd801478026052.png') || v.includes('engine.png'))) {
+            if (v && (v.includes('bd07f7dd801478026052') || v.includes('engine.png'))) {
               delete this.thumbnailsMap[k];
+              changed = true;
             }
+          }
+          if (changed) {
+            try {
+              fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2));
+              this.logger.info(`SwapEngine: Cleaned up placeholder thumbnails and saved thumbnails_map.json`);
+            } catch (_) {}
           }
         }
         this.logger.info(`SwapEngine: Loaded thumbnails map from cache (${Object.keys(this.thumbnailsMap).length} items)`);
