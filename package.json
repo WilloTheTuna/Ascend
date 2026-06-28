@@ -1,6 +1,6 @@
 {
   "name": "ascend",
-  "version": "1.0.34",
+  "version": "1.0.35",
   "description": "Ascend - EAC-Compatible Rocket League Mod Manager",
   "main": "src/main.js",
   "scripts": {
@@ -30,11 +30,8 @@
       "icon": "assets/icon.ico"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "allowToChangeInstallationDirectory": false,
-      "installerHeader": "build/installerHeader.png",
-      "installerSidebar": "build/installerSidebar.png",
-      "uninstallerSidebar": "build/installerSidebar.png",
       "include": "build/installer.nsh",
       "installerIcon": "assets/icon.ico",
       "uninstallerIcon": "assets/icon.ico"
