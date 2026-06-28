@@ -62,12 +62,12 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v5: Reset offset baselines for 90% and 100% UI scales to match new calibrations
-        if (!saved.configVersion || saved.configVersion < 5) {
-          saved.configVersion = 5;
+        // Migration v6: Adjust 90% scale offsetYBlue baseline to 7
+        if (!saved.configVersion || saved.configVersion < 6) {
+          saved.configVersion = 6;
           if (saved.ingameRankUiScalePercent === 90) {
             saved.ingameRankOffsetX = -60;
-            saved.ingameRankOffsetYBlue = -7;
+            saved.ingameRankOffsetYBlue = 7;
             saved.ingameRankOffsetYOrange = 0;
           } else {
             saved.ingameRankOffsetX = -60;
