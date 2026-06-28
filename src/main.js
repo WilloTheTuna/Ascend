@@ -257,10 +257,18 @@ function createOverlayWindow() {
 
   overlayWindow.setIgnoreMouseEvents(true, { forward: true });
 
-  // Re-assert always-on-top after any fullscreen transition (e.g. F11 in another app)
+  // Re-show and re-assert always-on-top if OS hides us unexpectedly (e.g. another app F11 fullscreen)
   overlayWindow.on('hide', () => {
     if (overlayWindow && !overlayWindow.isDestroyed()) {
       overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+    if (isOverlayIntendedVisible && overlayWindow && !overlayWindow.isDestroyed()) {
+      setTimeout(() => {
+        if (isOverlayIntendedVisible && overlayWindow && !overlayWindow.isDestroyed() && !overlayWindow.isVisible()) {
+          overlayWindow.show();
+          overlayWindow.setAlwaysOnTop(true, 'screen-saver');
+        }
+      }, 300);
     }
   });
 }
