@@ -85,89 +85,25 @@ def main():
         src_base.lower(): tgt_base
     }
     
-    # Also map texture companion if applicable
+    # Also map texture companion if applicable (including cross-package thumbnail object names)
     if src_base.lower().endswith("_sf") and tgt_base.lower().endswith("_sf"):
-        src_tex = src_base[:-3] + "_T_SF"
-        tgt_tex = tgt_base[:-3] + "_T_SF"
+        src_asset = src_base[:-3]
+        tgt_asset = tgt_base[:-3]
+        
+        # 1. Package name (e.g. Boost_Standard_Purple_T_SF -> Boost_Standard_T_SF)
+        src_tex = f"{src_asset}_T_SF"
+        tgt_tex = f"{tgt_asset}_T_SF"
         rename_map[src_tex.lower()] = tgt_tex
-
-    # Special mapping for legacy boosts (Standard, Flamethrower, etc.) that have color suffixes in their internal MIC, ParticleSystem, and LensFlare names
-    src_match = re.match(r"^Boost_(Standard|Flamethrower)(?:_([a-zA-Z]+))?_SF$", src_base, re.IGNORECASE)
-    tgt_match = re.match(r"^Boost_(Standard|Flamethrower)(?:_([a-zA-Z]+))?_SF$", tgt_base, re.IGNORECASE)
-    
-    if src_match and tgt_match:
-        boost_type = src_match.group(1)
-        src_color = src_match.group(2) or ""
-        tgt_color = tgt_match.group(2) or ""
         
-        src_color_cap = src_color.capitalize()
-        tgt_color_cap = tgt_color.capitalize() if tgt_color else ""
+        # 2. ProductThumbnailAsset (e.g. Boost_Standard_Purple_T -> Boost_Standard_T)
+        src_thumb = f"{src_asset}_T"
+        tgt_thumb = f"{tgt_asset}_T"
+        rename_map[src_thumb.lower()] = tgt_thumb
         
-        if boost_type.lower() == "standard":
-            # Map MIC: MasterBoost_Standard{Color}_MIC
-            src_mic = f"MasterBoost_Standard{src_color_cap}_MIC" if src_color_cap else "MasterBoost_Standard_MIC"
-            tgt_mic = f"MasterBoost_Standard{tgt_color_cap}_MIC" if tgt_color_cap else "MasterBoost_Standard_MIC"
-            if src_mic.lower() != tgt_mic.lower():
-                rename_map[src_mic.lower()] = tgt_mic
-                
-            # Map ParticleSystem: Boost_PS or Boost_Painted_PS
-            src_ps = "Boost_PS" if src_color_cap else "Boost_Painted_PS"
-            tgt_ps = "Boost_PS" if tgt_color_cap else "Boost_Painted_PS"
-            if src_ps.lower() != tgt_ps.lower():
-                rename_map[src_ps.lower()] = tgt_ps
-                
-            # Map LensFlare: BoostFlare_LF or BoostFlare_Painted_LF
-            src_lf = "BoostFlare_LF" if src_color_cap else "BoostFlare_Painted_LF"
-            tgt_lf = "BoostFlare_LF" if tgt_color_cap else "BoostFlare_Painted_LF"
-            if src_lf.lower() != tgt_lf.lower():
-                rename_map[src_lf.lower()] = tgt_lf
-                
-        elif boost_type.lower() == "flamethrower":
-            # Map MIC: Flamethrower{Color}_MIC
-            src_mic = f"Flamethrower{src_color_cap}_MIC" if src_color_cap else "Flamethrower_MIC"
-            tgt_mic = f"Flamethrower{tgt_color_cap}_MIC" if tgt_color_cap else "Flamethrower_MIC"
-            if src_mic.lower() != tgt_mic.lower():
-                rename_map[src_mic.lower()] = tgt_mic
-                
-            # Map Drive_PS: Drive_PS or Drive_Painted_PS
-            src_drive = "Drive_PS" if src_color_cap else "Drive_Painted_PS"
-            tgt_drive = "Drive_PS" if tgt_color_cap else "Drive_Painted_PS"
-            if src_drive.lower() != tgt_drive.lower():
-                rename_map[src_drive.lower()] = tgt_drive
-                
-            # Map Boost_PS: Boost_PS or Boost_Painted_PS
-            src_ps = "Boost_PS" if src_color_cap else "Boost_Painted_PS"
-            tgt_ps = "Boost_PS" if tgt_color_cap else "Boost_Painted_PS"
-            if src_ps.lower() != tgt_ps.lower():
-                rename_map[src_ps.lower()] = tgt_ps
-                
-            # Map LensFlare: BoostFlare_LF or BoostFlare_Painted_LF
-            src_lf = "BoostFlare_LF" if src_color_cap else "BoostFlare_Painted_LF"
-            tgt_lf = "BoostFlare_LF" if tgt_color_cap else "BoostFlare_Painted_LF"
-            if src_lf.lower() != tgt_lf.lower():
-                rename_map[src_lf.lower()] = tgt_lf
-
-    # Special mapping for legacy Goal Explosions that have custom suffixes/prefixes in their internal names
-    explosion_match_src = re.match(r"^explosion_([a-zA-Z0-9]+)_SF$", src_base, re.IGNORECASE)
-    tgt_default_match = re.match(r"^Explosion_Default_SF$", tgt_base, re.IGNORECASE)
-    
-    if explosion_match_src and tgt_default_match:
-        src_name = explosion_match_src.group(1)
-        src_name_cap = src_name.capitalize()
-        
-        # Map FXActor: FXActor_Explosion_{Color} -> Explosion_Default_FXActor
-        src_fx = f"FXActor_Explosion_{src_name_cap}"
-        rename_map[src_fx.lower()] = "Explosion_Default_FXActor"
-        
-        # Map ParticleSystems: {Color}_PS and PS_{Color} -> Explosion_Default_PS
-        src_ps1 = f"{src_name_cap}_PS"
-        src_ps2 = f"PS_{src_name_cap}"
-        rename_map[src_ps1.lower()] = "Explosion_Default_PS"
-        rename_map[src_ps2.lower()] = "Explosion_Default_PS"
-        
-        # Map Sound: SFX_GoalExplosion_{Color} -> SFX_GoalExplosion_Default
-        src_sfx = f"SFX_GoalExplosion_{src_name_cap}"
-        rename_map[src_sfx.lower()] = "SFX_GoalExplosion_Default"
+        # 3. Texture2D (e.g. Boost_Standard_Purple_TThumbnail -> Boost_Standard_TThumbnail)
+        src_texture = f"{src_asset}_TThumbnail"
+        tgt_texture = f"{tgt_asset}_TThumbnail"
+        rename_map[src_texture.lower()] = tgt_texture
 
     # Scan source and target backups to extract ProductAsset exports dynamically
     src_exports = {}
