@@ -91,26 +91,61 @@ def main():
         tgt_tex = tgt_base[:-3] + "_T_SF"
         rename_map[src_tex.lower()] = tgt_tex
 
-    # Special mapping for legacy boosts (Standard, Flamethrower, etc.) that have color suffixes in their internal MIC names
-    boost_match_src = re.match(r"^Boost_(Standard|Flamethrower)_([a-zA-Z]+)_SF$", src_base, re.IGNORECASE)
-    if boost_match_src:
-        boost_type = boost_match_src.group(1)
-        src_color = boost_match_src.group(2)
-        
-        boost_match_tgt = re.match(r"^Boost_(Standard|Flamethrower)_([a-zA-Z]+)_SF$", tgt_base, re.IGNORECASE)
-        tgt_color = boost_match_tgt.group(2) if boost_match_tgt else ""
+    # Special mapping for legacy boosts (Standard, Flamethrower, etc.) that have color suffixes in their internal MIC, ParticleSystem, and LensFlare names
+    src_match = re.match(r"^Boost_(Standard|Flamethrower)(?:_([a-zA-Z]+))?_SF$", src_base, re.IGNORECASE)
+    tgt_match = re.match(r"^Boost_(Standard|Flamethrower)(?:_([a-zA-Z]+))?_SF$", tgt_base, re.IGNORECASE)
+    
+    if src_match and tgt_match:
+        boost_type = src_match.group(1)
+        src_color = src_match.group(2) or ""
+        tgt_color = tgt_match.group(2) or ""
         
         src_color_cap = src_color.capitalize()
         tgt_color_cap = tgt_color.capitalize() if tgt_color else ""
         
         if boost_type.lower() == "standard":
-            src_mic = f"MasterBoost_Standard{src_color_cap}_MIC"
+            # Map MIC: MasterBoost_Standard{Color}_MIC
+            src_mic = f"MasterBoost_Standard{src_color_cap}_MIC" if src_color_cap else "MasterBoost_Standard_MIC"
             tgt_mic = f"MasterBoost_Standard{tgt_color_cap}_MIC" if tgt_color_cap else "MasterBoost_Standard_MIC"
-            rename_map[src_mic.lower()] = tgt_mic
+            if src_mic.lower() != tgt_mic.lower():
+                rename_map[src_mic.lower()] = tgt_mic
+                
+            # Map ParticleSystem: Boost_PS or Boost_Painted_PS
+            src_ps = "Boost_PS" if src_color_cap else "Boost_Painted_PS"
+            tgt_ps = "Boost_PS" if tgt_color_cap else "Boost_Painted_PS"
+            if src_ps.lower() != tgt_ps.lower():
+                rename_map[src_ps.lower()] = tgt_ps
+                
+            # Map LensFlare: BoostFlare_LF or BoostFlare_Painted_LF
+            src_lf = "BoostFlare_LF" if src_color_cap else "BoostFlare_Painted_LF"
+            tgt_lf = "BoostFlare_LF" if tgt_color_cap else "BoostFlare_Painted_LF"
+            if src_lf.lower() != tgt_lf.lower():
+                rename_map[src_lf.lower()] = tgt_lf
+                
         elif boost_type.lower() == "flamethrower":
-            src_mic = f"Flamethrower{src_color_cap}_MIC"
+            # Map MIC: Flamethrower{Color}_MIC
+            src_mic = f"Flamethrower{src_color_cap}_MIC" if src_color_cap else "Flamethrower_MIC"
             tgt_mic = f"Flamethrower{tgt_color_cap}_MIC" if tgt_color_cap else "Flamethrower_MIC"
-            rename_map[src_mic.lower()] = tgt_mic
+            if src_mic.lower() != tgt_mic.lower():
+                rename_map[src_mic.lower()] = tgt_mic
+                
+            # Map Drive_PS: Drive_PS or Drive_Painted_PS
+            src_drive = "Drive_PS" if src_color_cap else "Drive_Painted_PS"
+            tgt_drive = "Drive_PS" if tgt_color_cap else "Drive_Painted_PS"
+            if src_drive.lower() != tgt_drive.lower():
+                rename_map[src_drive.lower()] = tgt_drive
+                
+            # Map Boost_PS: Boost_PS or Boost_Painted_PS
+            src_ps = "Boost_PS" if src_color_cap else "Boost_Painted_PS"
+            tgt_ps = "Boost_PS" if tgt_color_cap else "Boost_Painted_PS"
+            if src_ps.lower() != tgt_ps.lower():
+                rename_map[src_ps.lower()] = tgt_ps
+                
+            # Map LensFlare: BoostFlare_LF or BoostFlare_Painted_LF
+            src_lf = "BoostFlare_LF" if src_color_cap else "BoostFlare_Painted_LF"
+            tgt_lf = "BoostFlare_LF" if tgt_color_cap else "BoostFlare_Painted_LF"
+            if src_lf.lower() != tgt_lf.lower():
+                rename_map[src_lf.lower()] = tgt_lf
 
     # Scan source and target backups to extract ProductAsset exports dynamically
     src_exports = {}
