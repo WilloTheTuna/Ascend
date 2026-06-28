@@ -147,6 +147,28 @@ def main():
             if src_lf.lower() != tgt_lf.lower():
                 rename_map[src_lf.lower()] = tgt_lf
 
+    # Special mapping for legacy Goal Explosions that have custom suffixes/prefixes in their internal names
+    explosion_match_src = re.match(r"^explosion_([a-zA-Z0-9]+)_SF$", src_base, re.IGNORECASE)
+    tgt_default_match = re.match(r"^Explosion_Default_SF$", tgt_base, re.IGNORECASE)
+    
+    if explosion_match_src and tgt_default_match:
+        src_name = explosion_match_src.group(1)
+        src_name_cap = src_name.capitalize()
+        
+        # Map FXActor: FXActor_Explosion_{Color} -> Explosion_Default_FXActor
+        src_fx = f"FXActor_Explosion_{src_name_cap}"
+        rename_map[src_fx.lower()] = "Explosion_Default_FXActor"
+        
+        # Map ParticleSystems: {Color}_PS and PS_{Color} -> Explosion_Default_PS
+        src_ps1 = f"{src_name_cap}_PS"
+        src_ps2 = f"PS_{src_name_cap}"
+        rename_map[src_ps1.lower()] = "Explosion_Default_PS"
+        rename_map[src_ps2.lower()] = "Explosion_Default_PS"
+        
+        # Map Sound: SFX_GoalExplosion_{Color} -> SFX_GoalExplosion_Default
+        src_sfx = f"SFX_GoalExplosion_{src_name_cap}"
+        rename_map[src_sfx.lower()] = "SFX_GoalExplosion_Default"
+
     # Scan source and target backups to extract ProductAsset exports dynamically
     src_exports = {}
     if len(sys.argv) >= 6 and sys.argv[5]:
