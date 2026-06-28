@@ -735,10 +735,14 @@ class SwapEngine extends EventEmitter {
               if (this.thumbnailsMap[translated] === '') delete this.thumbnailsMap[translated];
             }
           }
-          // Self-heal cache: delete any generic question marks or wrong engine.png matches
+          // Self-heal cache: delete any generic question marks, wrong engine.png matches, or failed painted items
           let changed = false;
           for (const [k, v] of Object.entries(this.thumbnailsMap)) {
             if (v && (v.includes('bd07f7dd801478026052') || v.includes('engine.png'))) {
+              delete this.thumbnailsMap[k];
+              changed = true;
+            }
+            if (k.endsWith(' t') && v === '') {
               delete this.thumbnailsMap[k];
               changed = true;
             }
@@ -746,7 +750,7 @@ class SwapEngine extends EventEmitter {
           if (changed) {
             try {
               fs.writeFileSync(mapFile, JSON.stringify(this.thumbnailsMap, null, 2));
-              this.logger.info(`SwapEngine: Cleaned up placeholder thumbnails and saved thumbnails_map.json`);
+              this.logger.info(`SwapEngine: Cleaned up placeholder and failed painted thumbnails in thumbnails_map.json`);
             } catch (_) {}
           }
         }
@@ -1067,6 +1071,12 @@ class SwapEngine extends EventEmitter {
   }
 
   getRlgUrl(name, category) {
+    let cleanName = name;
+    // Strip painted ' T' suffix so we query the base item URL (rocket-league.com hosts all paints on the base page)
+    if (cleanName.toLowerCase().endsWith(' t')) {
+      cleanName = cleanName.slice(0, -2).trim();
+    }
+
     const getSlug = (str) => {
       return str.toLowerCase()
         .replace(/[àáâãäå]/g, 'a')
@@ -1100,14 +1110,14 @@ class SwapEngine extends EventEmitter {
     const catSlug = mapping[category];
     if (!catSlug) return null;
 
-    if (category === 'Decals' && name.includes(':')) {
-      const parts = name.split(':');
+    if (category === 'Decals' && cleanName.includes(':')) {
+      const parts = cleanName.split(':');
       const bodySlug = getSlug(parts[0].trim());
       const decalSlug = getSlug(parts[1].trim());
       return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
     }
 
-    const itemSlug = getSlug(name);
+    const itemSlug = getSlug(cleanName);
     return `https://rocket-league.com/items/${catSlug}/${itemSlug}`;
   }
 
