@@ -62,18 +62,13 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v7: Adjust 90% scale offsetYBlue baseline to 0
-        if (!saved.configVersion || saved.configVersion < 7) {
-          saved.configVersion = 7;
-          if (saved.ingameRankUiScalePercent === 90) {
-            saved.ingameRankOffsetX = -60;
-            saved.ingameRankOffsetYBlue = 0;
-            saved.ingameRankOffsetYOrange = 0;
-          } else {
-            saved.ingameRankOffsetX = -60;
-            saved.ingameRankOffsetYBlue = 0;
-            saved.ingameRankOffsetYOrange = 0;
-          }
+        // Migration v8: Reset IngameRank offsets to exact LERP values based on saved UI scale percent
+        if (!saved.configVersion || saved.configVersion < 8) {
+          saved.configVersion = 8;
+          const s = saved.ingameRankUiScalePercent !== undefined ? saved.ingameRankUiScalePercent : 100;
+          saved.ingameRankOffsetX = -60;
+          saved.ingameRankOffsetYBlue = Math.round(0 + ((s - 90) / 10) * (3 - 0));
+          saved.ingameRankOffsetYOrange = Math.round(0 + ((s - 90) / 10) * (-2 - 0));
           try {
             fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
           } catch (_) {}

@@ -1799,14 +1799,15 @@ async function openPluginSettings(pluginId) {
 
 
     const getCalibratedDefault = (scalePercent, key) => {
-      if (scalePercent === 90) {
-        if (key === 'offsetX') return -60;
-        if (key === 'offsetYBlue') return 0;
-        if (key === 'offsetYOrange') return 0;
+      const s = scalePercent !== undefined ? scalePercent : 100;
+      if (key === 'offsetX') return -60;
+      if (key === 'offsetYBlue') {
+        // LERP: 0 at 90%, 3 at 100%
+        return Math.round(0 + ((s - 90) / 10) * (3 - 0));
       }
-      if (scalePercent === 100) {
-        if (key === 'offsetX') return -60;
-        // Y=0, XBlue=0, YBlue=0 → all default to 0
+      if (key === 'offsetYOrange') {
+        // LERP: 0 at 90%, -2 at 100%
+        return Math.round(0 + ((s - 90) / 10) * (-2 - 0));
       }
       return 0;
     };
@@ -2183,13 +2184,15 @@ function setupPluginsListeners() {
     // 2. Aggiorna IngameRank
     try {
       const getCalibratedDefault = (scalePercent, key) => {
-        if (scalePercent === 90) {
-          if (key === 'offsetX') return -60;
-          if (key === 'offsetYBlue') return 3;
-          if (key === 'offsetYOrange') return -2;
+        const s = scalePercent !== undefined ? scalePercent : 100;
+        if (key === 'offsetX') return -60;
+        if (key === 'offsetYBlue') {
+          // LERP: 0 at 90%, 3 at 100%
+          return Math.round(0 + ((s - 90) / 10) * (3 - 0));
         }
-        if (scalePercent === 100) {
-          if (key === 'offsetX') return -60;
+        if (key === 'offsetYOrange') {
+          // LERP: 0 at 90%, -2 at 100%
+          return Math.round(0 + ((s - 90) / 10) * (-2 - 0));
         }
         return 0;
       };
