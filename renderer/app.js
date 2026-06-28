@@ -1799,17 +1799,10 @@ async function openPluginSettings(pluginId) {
 
 
     const getCalibratedDefault = (scalePercent, key) => {
-      const s = scalePercent !== undefined ? scalePercent : 100;
-      // Baselines: 90%→(X=-80, YBlue=3, YOrange=3), 100%→(X=-80, YBlue=8, YOrange=3)
+      // All offsets are constant across scales (verified at 90% and 100%)
       if (key === 'offsetX') return -80;
-      if (key === 'offsetYBlue') {
-        // LERP: 3 at 90%, 8 at 100%
-        return Math.round(3 + ((s - 90) / 10) * (8 - 3));
-      }
-      if (key === 'offsetYOrange') {
-        // Constant: 3 at both 90% and 100%
-        return 3;
-      }
+      if (key === 'offsetYBlue') return -2;
+      if (key === 'offsetYOrange') return 3;
       return 0;
     };
 
@@ -2185,17 +2178,10 @@ function setupPluginsListeners() {
     // 2. Aggiorna IngameRank
     try {
       const getCalibratedDefault = (scalePercent, key) => {
-        const s = scalePercent !== undefined ? scalePercent : 100;
-        // Baselines: 90%→(X=-80, YBlue=3, YOrange=3), 100%→(X=-80, YBlue=8, YOrange=3)
+        // All offsets are constant across scales (verified at 90% and 100%)
         if (key === 'offsetX') return -80;
-        if (key === 'offsetYBlue') {
-          // LERP: 3 at 90%, 8 at 100%
-          return Math.round(3 + ((s - 90) / 10) * (8 - 3));
-        }
-        if (key === 'offsetYOrange') {
-          // Constant: 3 at both 90% and 100%
-          return 3;
-        }
+        if (key === 'offsetYBlue') return -2;
+        if (key === 'offsetYOrange') return 3;
         return 0;
       };
 

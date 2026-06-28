@@ -46,7 +46,7 @@ const DEFAULTS = {
   ingameRankOffsetX: -80,
   ingameRankOffsetY: 0,
   ingameRankOffsetXBlue: 0,
-  ingameRankOffsetYBlue: 8,
+  ingameRankOffsetYBlue: -2,
   ingameRankOffsetXOrange: 0,
   ingameRankOffsetYOrange: 3,
   ingameRankUiScalePercent: 100
@@ -62,13 +62,12 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v10: Recalibrate IngameRank offsets using correct baselines from user screenshots
-        // 90%: X=-80, YBlue=3, YOrange=3 | 100%: X=-80, YBlue=8, YOrange=3
-        if (!saved.configVersion || saved.configVersion < 10) {
-          saved.configVersion = 10;
+        // Migration v11: Constant offsets verified at 90% and 100% - X=-80, YBlue=-2, YOrange=3
+        if (!saved.configVersion || saved.configVersion < 11) {
+          saved.configVersion = 11;
           const s = saved.ingameRankUiScalePercent !== undefined ? saved.ingameRankUiScalePercent : 100;
           saved.ingameRankOffsetX = -80;
-          saved.ingameRankOffsetYBlue = Math.round(3 + ((s - 90) / 10) * (8 - 3));
+          saved.ingameRankOffsetYBlue = -2;
           saved.ingameRankOffsetYOrange = 3;
           saved.ingameRankScaleMultiplier = parseFloat((1.00 * (s / 100)).toFixed(2));
           try {
