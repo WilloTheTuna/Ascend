@@ -42,7 +42,7 @@ const DEFAULTS = {
   ingameRankHoldToShow: true,
   ingameRankHotkey: 'Tab',
   ingameRankControllerButton: 32, // Back button (Scoreboard default on controller)
-  ingameRankScaleMultiplier: 0.93,
+  ingameRankScaleMultiplier: 1.00,
   ingameRankOffsetX: -60,
   ingameRankOffsetY: 0,
   ingameRankOffsetXBlue: 0,
@@ -62,13 +62,14 @@ class SettingsManager {
     if (!this._data) {
       try {
         const saved = JSON.parse(fs.readFileSync(this.file, 'utf8'));
-        // Migration v8: Reset IngameRank offsets to exact LERP values based on saved UI scale percent
-        if (!saved.configVersion || saved.configVersion < 8) {
-          saved.configVersion = 8;
+        // Migration v9: Update IngameRank scale multiplier to new 1.00 base
+        if (!saved.configVersion || saved.configVersion < 9) {
+          saved.configVersion = 9;
           const s = saved.ingameRankUiScalePercent !== undefined ? saved.ingameRankUiScalePercent : 100;
           saved.ingameRankOffsetX = -60;
           saved.ingameRankOffsetYBlue = Math.round(0 + ((s - 90) / 10) * (3 - 0));
           saved.ingameRankOffsetYOrange = Math.round(0 + ((s - 90) / 10) * (-2 - 0));
+          saved.ingameRankScaleMultiplier = parseFloat((1.00 * (s / 100)).toFixed(2));
           try {
             fs.writeFileSync(this.file, JSON.stringify({ ...DEFAULTS, ...saved }, null, 2));
           } catch (_) {}

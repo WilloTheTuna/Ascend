@@ -1836,7 +1836,7 @@ async function openPluginSettings(pluginId) {
       uiScaleSlider.value = currentScalePercent;
       uiScaleInput.value = currentScalePercent;
 
-      const BASE_SCALE = 1.03;
+      const BASE_SCALE = 1.00;
 
       const updateAllFromUiScale = async (percentVal) => {
         currentScalePercent = percentVal;
@@ -2214,7 +2214,7 @@ function setupPluginsListeners() {
       const displayXOrange = prevOffsetXOrange - getCalibratedDefault(prevScale, 'offsetXOrange');
       const displayYOrange = prevOffsetYOrange - getCalibratedDefault(prevScale, 'offsetYOrange');
 
-      const igScaleMultiplier = parseFloat((1.03 * (val / 100)).toFixed(2));
+      const igScaleMultiplier = parseFloat((1.00 * (val / 100)).toFixed(2));
       const newOffsetX = displayX + getCalibratedDefault(val, 'offsetX');
       const newOffsetY = displayY + getCalibratedDefault(val, 'offsetY');
       const newOffsetXBlue = displayXBlue + getCalibratedDefault(val, 'offsetXBlue');
