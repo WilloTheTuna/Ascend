@@ -608,6 +608,14 @@ class SwapEngine extends EventEmitter {
           }
         }
       }
+      // Fallback for painted variants: "Fennec T" -> use "Fennec" image
+      if (!image && name.endsWith(' T')) {
+        const baseName = name.slice(0, -2).trim().toLowerCase();
+        image = this.thumbnailsMap ? (this.thumbnailsMap[baseName] || '') : '';
+        if (image) {
+          this.thumbnailsMap[name.toLowerCase()] = image; // cache alias
+        }
+      }
       if (!image) {
         this.queueThumbnailResolution(name, type);
       }
@@ -824,6 +832,12 @@ class SwapEngine extends EventEmitter {
     const key = name.toLowerCase();
     if (this.thumbnailsMap[key] !== undefined) return true;
 
+    // Fallback for painted variants: "Fennec T" -> try "Fennec"
+    if (key.endsWith(' t')) {
+      const baseKey = key.slice(0, -2).trim();
+      if (this.thumbnailsMap[baseKey] !== undefined) return true;
+    }
+
     // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
     if (category === 'Decals' && name.includes(':')) {
       const decalName = name.split(':')[1].trim().toLowerCase();
@@ -1023,19 +1037,22 @@ class SwapEngine extends EventEmitter {
 
           if (imageUri) {
             this.logger.info(`Resolved and cached thumbnail for ${name} (${category}): ${imageUri}`);
-            // Emit event so main can broadcast to renderer
             this.emit('thumbnail-resolved', { name, image: imageUri });
           } else {
             this.logger.info(`No thumbnail found for ${name} (${category}), cached empty fallback`);
           }
+        } else {
+          // No URL for this category - mark as empty immediately to prevent re-queuing
+          this.thumbnailsMap[nameLower] = '';
         }
       } catch (err) {
         this.logger.error(`Failed to resolve thumbnail for ${name} (${category}): ${err.message}`);
+        this.thumbnailsMap[nameLower] = '';
       }
 
       this._resolveQueueSet.delete(nameLower);
-      // Rate limit to avoid getting blocked by RL Garage (800ms)
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Rate limit to avoid getting blocked (reduced from 800ms)
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
 
     this._isResolving = false;
@@ -1087,6 +1104,11 @@ class SwapEngine extends EventEmitter {
   }
 
   async scrapeRlgImage(url) {
+    // Known generic placeholder image hashes - treat as "not found"
+    const PLACEHOLDER_HASHES = [
+      'bd07f7dd801478026052',
+      'engine',
+    ];
     const fetch = require('node-fetch');
     try {
       const res = await fetch(url, {
@@ -1095,20 +1117,24 @@ class SwapEngine extends EventEmitter {
         },
         timeout: 10000
       });
-      if (res.status === 301 || res.status === 302) {
+      if (res.status === 301 || res.status === 302 || res.status === 404) {
         return null;
       }
       if (!res.ok) {
         throw new Error(`Status ${res.status}`);
       }
       const data = await res.text();
-      // Match the main item image via og:image or twitter:image meta tags to prevent matching random related design/ad images
+      // Match the main item image via og:image or twitter:image meta tags
       const match = data.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) || 
                     data.match(/<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i);
       if (match) {
         let imgUrl = match[1];
         if (!imgUrl.startsWith('http')) {
           imgUrl = 'https://rocket-league.com' + imgUrl;
+        }
+        // Filter out known generic placeholder images
+        if (PLACEHOLDER_HASHES.some(h => imgUrl.includes(h))) {
+          return null;
         }
         return imgUrl;
       }
