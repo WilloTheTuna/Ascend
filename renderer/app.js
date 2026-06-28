@@ -233,6 +233,7 @@ rc.on('catalog-refresh-progress', (data) => {
     pct.textContent = '100%';
     if (btn) btn.disabled = false;
     filterAndRender();
+    updateMissingItemsBadge();
     setTimeout(() => { bar.style.display = 'none'; }, 2000);
   } else if (data.phase === 'failed') {
     text.textContent = `Error: ${data.error || 'failed'}`;
@@ -283,6 +284,19 @@ async function fetchAndRenderCatalog(resetLimit = false) {
       rc.getMissingThumbnailsInfo().then(info => {
         if (info && info.totalCatalog) {
           countText.textContent = `${info.downloadedCount.toLocaleString('it-IT')} / ${info.totalCatalog.toLocaleString('it-IT')}`;
+          
+          // Keep the missing items badge perfectly synchronized
+          const popup = document.getElementById('swaps-refresh-popup');
+          const badgeText = document.getElementById('missing-count');
+          const btn = document.getElementById('btn-swaps-refresh');
+          if (info.missingCount > 0) {
+            if (badgeText) badgeText.textContent = info.missingCount;
+            if (popup) popup.style.display = 'block';
+            if (btn) btn.classList.add('pulse');
+          } else {
+            if (popup) popup.style.display = 'none';
+            if (btn) btn.classList.remove('pulse');
+          }
         } else {
           countText.textContent = `0 / 0`;
         }
