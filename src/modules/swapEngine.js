@@ -616,6 +616,14 @@ class SwapEngine extends EventEmitter {
           this.thumbnailsMap[name.toLowerCase()] = image; // cache alias
         }
       }
+      // Fallback for Decals of specific car bodies: "Fennec: Distortion" -> use "Fennec" body image
+      if (!image && type === 'Decals' && name.includes(':')) {
+        const bodyName = name.split(':')[0].trim().toLowerCase();
+        image = this.thumbnailsMap ? (this.thumbnailsMap[bodyName] || '') : '';
+        if (image) {
+          this.thumbnailsMap[name.toLowerCase()] = image; // cache alias
+        }
+      }
       if (!image) {
         this.queueThumbnailResolution(name, type);
       }
@@ -842,18 +850,27 @@ class SwapEngine extends EventEmitter {
   isThumbnailPresent(name, category) {
     if (!this.thumbnailsMap) return false;
     const key = name.toLowerCase();
-    if (this.thumbnailsMap[key] !== undefined) return true;
+    const val = this.thumbnailsMap[key];
+    if (val !== undefined && val !== '') return true;
 
     // Fallback for painted variants: "Fennec T" -> try "Fennec"
     if (key.endsWith(' t')) {
       const baseKey = key.slice(0, -2).trim();
-      if (this.thumbnailsMap[baseKey] !== undefined) return true;
+      const baseVal = this.thumbnailsMap[baseKey];
+      if (baseVal !== undefined && baseVal !== '') return true;
     }
 
     // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
     if (category === 'Decals' && name.includes(':')) {
       const decalName = name.split(':')[1].trim().toLowerCase();
-      if (this.thumbnailsMap[decalName] !== undefined) {
+      const decalVal = this.thumbnailsMap[decalName];
+      if (decalVal !== undefined && decalVal !== '') {
+        return true;
+      }
+      // Fallback to car body image: "Fennec: Distortion" -> try "Fennec"
+      const bodyName = name.split(':')[0].trim().toLowerCase();
+      const bodyVal = this.thumbnailsMap[bodyName];
+      if (bodyVal !== undefined && bodyVal !== '') {
         return true;
       }
     }
