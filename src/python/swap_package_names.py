@@ -91,6 +91,27 @@ def main():
         tgt_tex = tgt_base[:-3] + "_T_SF"
         rename_map[src_tex.lower()] = tgt_tex
 
+    # Special mapping for legacy boosts (Standard, Flamethrower, etc.) that have color suffixes in their internal MIC names
+    boost_match_src = re.match(r"^Boost_(Standard|Flamethrower)_([a-zA-Z]+)_SF$", src_base, re.IGNORECASE)
+    if boost_match_src:
+        boost_type = boost_match_src.group(1)
+        src_color = boost_match_src.group(2)
+        
+        boost_match_tgt = re.match(r"^Boost_(Standard|Flamethrower)_([a-zA-Z]+)_SF$", tgt_base, re.IGNORECASE)
+        tgt_color = boost_match_tgt.group(2) if boost_match_tgt else ""
+        
+        src_color_cap = src_color.capitalize()
+        tgt_color_cap = tgt_color.capitalize() if tgt_color else ""
+        
+        if boost_type.lower() == "standard":
+            src_mic = f"MasterBoost_Standard{src_color_cap}_MIC"
+            tgt_mic = f"MasterBoost_Standard{tgt_color_cap}_MIC" if tgt_color_cap else "MasterBoost_Standard_MIC"
+            rename_map[src_mic.lower()] = tgt_mic
+        elif boost_type.lower() == "flamethrower":
+            src_mic = f"Flamethrower{src_color_cap}_MIC"
+            tgt_mic = f"Flamethrower{tgt_color_cap}_MIC" if tgt_color_cap else "Flamethrower_MIC"
+            rename_map[src_mic.lower()] = tgt_mic
+
     # Scan source and target backups to extract ProductAsset exports dynamically
     src_exports = {}
     if len(sys.argv) >= 6 and sys.argv[5]:

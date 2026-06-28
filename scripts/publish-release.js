@@ -68,11 +68,11 @@ async function main() {
       console.log(`[auto-release] ✓ Created release ${release.html_url}`);
     }
 
-    // 3. Find setup file in dist/
+    // 3. Find setup file in dist/ matching version
     const distDir = path.join(__dirname, '..', 'dist');
-    const files = fs.readdirSync(distDir).filter(f => f.endsWith('.exe') && !f.endsWith('.blockmap'));
+    const files = fs.readdirSync(distDir).filter(f => f.endsWith('.exe') && !f.endsWith('.blockmap') && f.includes(version));
     if (!files.length) {
-      console.error('[auto-release] No .exe setup file found in dist/');
+      console.error(`[auto-release] No .exe setup file found in dist/ matching version ${version}`);
       return;
     }
 

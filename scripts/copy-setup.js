@@ -9,10 +9,12 @@ if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true });
 }
 
-// 1. Find the new installer .exe in dist/
-const files = fs.readdirSync(distDir).filter(f => f.endsWith('.exe') && !f.endsWith('.blockmap'));
+// 1. Find the new installer .exe in dist/ matching current version
+const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf8'));
+const version = pkg.version;
+const files = fs.readdirSync(distDir).filter(f => f.endsWith('.exe') && !f.endsWith('.blockmap') && f.includes(version));
 if (!files.length) {
-  console.error('[copy-setup] No .exe found in dist/');
+  console.error(`[copy-setup] No .exe found in dist/ matching version ${version}`);
   process.exit(1);
 }
 

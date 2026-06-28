@@ -406,34 +406,34 @@ function appendLoadMore(grid) {
 function attachCardListeners(grid, last = null) {
   const DEFAULTS_BY_CATEGORY = {
     'Anthems': 'album_anthem_monstercatgeneral_SF.upk',
-    'Antennas': 'Antenna_Default_SF.upk',
+    'Antennas': 'antenna_classic_SF.upk',
     'AvatarBorders': 'AvatarBorder_Default_SF.upk',
     'Bodies': 'Body_Octane_SF.upk',
     'Decals': 'body_octane_premium_skins_SF.upk',
     'Boosts': 'Boost_Standard_SF.upk',
     'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
-    'GoalExplosions': 'explosion_standard_SF.upk',
-    'Toppers': 'hat_default_SF.upk',
-    'PaintFinishes': 'paintfinish_standard_SF.upk',
-    'PlayerBanners': 'playerbanner_default_SF.upk',
-    'Trails': 'ss_standard_SF.upk',
-    'Wheels': 'wheel_standard_SF.upk'
+    'GoalExplosions': 'Explosion_Default_SF.upk',
+    'Toppers': 'hat_halo_SF.upk',
+    'PaintFinishes': 'PaintFinish_Default_SF.upk',
+    'PlayerBanners': 'playerbanner_classicpickup_SF.upk',
+    'Trails': 'ss_default_SF.upk',
+    'Wheels': 'wheel_7spoke_SF.upk'
   };
 
   const DEFAULTS_LABELS = {
     'Anthems': 'Monstercat General',
-    'Antennas': 'Antenna di Default',
+    'Antennas': 'Classic Antenna',
     'AvatarBorders': 'Bordo Avatar di Default',
     'Bodies': 'Octane',
     'Decals': 'Octane: Standard Decal',
-    'Boosts': 'Standard',
+    'Boosts': 'Standard Boost',
     'EngineSounds': 'OEM Engine',
     'GoalExplosions': 'Classica',
-    'Toppers': 'Hat di Default',
+    'Toppers': 'Halo',
     'PaintFinishes': 'Finitura Standard',
-    'PlayerBanners': 'Banner di Default',
+    'PlayerBanners': 'Classic Banner',
     'Trails': 'Classica',
-    'Wheels': 'OEM (Standard)'
+    'Wheels': 'OEM (7Spoke)'
   };
 
   const cards = grid.querySelectorAll('.catalog-card');
@@ -2928,34 +2928,34 @@ function showSwapTargetModal(item) {
   const customContainer = document.getElementById('swap-target-custom-file-container');
   const DEFAULTS_BY_CATEGORY = {
     'Anthems': 'album_anthem_monstercatgeneral_SF.upk',
-    'Antennas': 'Antenna_Default_SF.upk',
+    'Antennas': 'antenna_classic_SF.upk',
     'AvatarBorders': 'AvatarBorder_Default_SF.upk',
     'Bodies': 'Body_Octane_SF.upk',
     'Decals': 'body_octane_premium_skins_SF.upk',
     'Boosts': 'Boost_Standard_SF.upk',
     'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
-    'GoalExplosions': 'explosion_standard_SF.upk',
-    'Toppers': 'hat_default_SF.upk',
-    'PaintFinishes': 'paintfinish_standard_SF.upk',
-    'PlayerBanners': 'playerbanner_default_SF.upk',
-    'Trails': 'ss_standard_SF.upk',
-    'Wheels': 'wheel_standard_SF.upk'
+    'GoalExplosions': 'Explosion_Default_SF.upk',
+    'Toppers': 'hat_halo_SF.upk',
+    'PaintFinishes': 'PaintFinish_Default_SF.upk',
+    'PlayerBanners': 'playerbanner_classicpickup_SF.upk',
+    'Trails': 'ss_default_SF.upk',
+    'Wheels': 'wheel_7spoke_SF.upk'
   };
 
   const DEFAULTS_LABELS = {
     'Anthems': 'Monstercat General',
-    'Antennas': 'Antenna di Default',
+    'Antennas': 'Classic Antenna',
     'AvatarBorders': 'Bordo Avatar di Default',
     'Bodies': 'Octane',
     'Decals': 'Octane: Standard Decal',
     'Boosts': 'Standard Boost',
     'EngineSounds': 'OEM Engine',
     'GoalExplosions': 'Classica',
-    'Toppers': 'Hat di Default',
+    'Toppers': 'Halo',
     'PaintFinishes': 'Finitura Standard',
-    'PlayerBanners': 'Banner di Default',
+    'PlayerBanners': 'Classic Banner',
     'Trails': 'Classica',
-    'Wheels': 'OEM (Standard)'
+    'Wheels': 'OEM (7Spoke)'
   };
 
   if (nameEl) nameEl.textContent = item.name;
@@ -2981,7 +2981,7 @@ function showSwapTargetModal(item) {
     ];
   } else if (item.type === 'Wheels') {
     options = [
-      { label: 'OEM (Standard)', file: 'wheel_standard_SF.upk' },
+      { label: 'OEM (7Spoke)', file: 'wheel_7spoke_SF.upk' },
       { label: 'Cristiano', file: 'wheel_cristiano_SF.upk' },
       { label: 'Stern', file: 'wheel_stern_SF.upk' },
       { label: 'Veloce', file: 'wheel_veloce_SF.upk' }
