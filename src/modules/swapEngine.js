@@ -64,34 +64,56 @@ const CODENAME_MAP = {
   'decals:future stainless buster': 'Miku Stainless Buster',
   'decals:future stainless buster t': 'Miku Stainless Buster',
   'decals:future': 'Miku Rider Dark',
-  'decals:future t': 'Miku Rider Dark',
+  'decals:future t': 'Miku Rider Dark'
+};
 
-  // Esports Decals overrides
-  'decals:alpine': 'Alpine Esports',
-  'decals:elevate': 'Elevate 2024',
-  'decals:evilgeniuses': 'Evil Geniuses',
-  'decals:fazeclan': 'FaZe Clan',
-  'decals:fcbarcelona': 'FC Barcelona',
-  'decals:geng': 'Gen.G',
-  'decals:karminecorp': 'Karmine Corp',
-  'decals:manchestercity': 'Manchester City',
-  'decals:moistesports': 'Moist Esports',
-  'decals:opticgaming': 'OpTic Gaming',
-  'decals:pittsburghknights': 'Pittsburgh Knights',
-  'decals:psg': 'PSG Esports',
-  'decals:renaultvitality': 'Renault Vitality',
-  'decals:shopifyrebellion': 'Shopify Rebellion',
-  'decals:teamfalcons': 'Team Falcons',
-  'decals:twistedminds': 'Twisted Minds',
-  'decals:gentlemates': 'Gentle Mates',
-  'decals:spacestationgaming': 'Spacestation Gaming',
-  'decals:kansascitypioneers': 'Kansas City Pioneers',
-  'decals:misfits': 'Misfits Gaming',
-  'decals:g2': 'G2 Esports',
-  'decals:mibr': 'MIBR',
-  'decals:nip': 'Ninjas in Pyjamas',
-  'decals:oxygen': 'Oxygen Esports',
-  'decals:rixgg': 'Rix.GG'
+// Direct RLG body/slug map for Esports Decals (verified against rocket-league.com)
+// Key: catalog label lowercased. Value: 'body/slug' path on RLG
+const ESPORTS_DECAL_URLS = {
+  'alpine':              'octane/alpine-esports',
+  'cloud9':              'octane/cloud9',
+  'complexity':          'octane/complexity',
+  'dignitas':            'octane/dignitas',
+  'elevate':             'fennec/elevate-2024',
+  'evilgeniuses':        'octane/evil-geniuses',
+  'fazeclan':            'fennec/faze-clan',
+  'furia':               'octane/furia',
+  'g2':                  'octane/g2-esports',
+  'ghostgaming':         'octane/ghost-gaming',
+  'giants':              'octane/giants',
+  'groundzerogaming':    'octane/ground-zero-gaming',
+  'karminecorp':         'fennec/karmine-corp',
+  'mousesports':         'octane/mousesports',
+  'nrg':                 'octane/nrg-esports',
+  'psg':                 'octane/psg-esports',
+  'pwr':                 'octane/pwr',
+  'rebellion':           'octane/rebellion',
+  'renegades':           'octane/renegades',
+  'rogue':               'octane/rogue',
+  'skgaming':            'octane/sk-gaming',
+  'semperesports':       'octane/semper-esports',
+  'spacestationgaming':  'octane/spacestation-gaming',
+  'tsm':                 'octane/tsm',
+  'teamqueso':           'octane/team-queso',
+  'teamsingularity':     'octane/team-singularity',
+  'torrent':             'octane/torrent',
+  'trueneutral':         'octane/true-neutral',
+  'version1':            'octane/version1',
+  'xset':                'octane/xset',
+  'renaultvitality':     'octane/team-vitality',
+  'resolve':             'octane/resolve-2024',
+  'splyce':              'octane/splyce',
+  'endpoint':            'octane/endpoint',
+  'eunited':             'octane/eunited',
+  'guild':               'octane/guild-esports',
+  'oxygen':              'octane/oxygen-esports',
+  'pittsburghknights':   'octane/pittsburgh-knights',
+  'reciprocity':         'octane/reciprocity',
+  'solary':              'octane/solary',
+  'susquehannasoniqs':   'octane/susquehanna-soniqs',
+  'teambds':             'octane/team-bds',
+  'teamenvy':            'octane/team-envy',
+  'teamliquid':          'octane/team-liquid',
 };
 
 /**
@@ -1205,10 +1227,15 @@ class SwapEngine extends EventEmitter {
         const bodySlug = getSlug(parts[0].trim());
         const decalSlug = getSlug(parts[1].trim());
         return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
-      } else {
-        const decalSlug = getSlug(cleanName);
-        return `TRY_DECALS:${decalSlug}`;
       }
+      // Check direct esports URL map first (verified RLG paths)
+      const labelKey = getSlug(cleanName).replace(/-/g, '');
+      if (ESPORTS_DECAL_URLS[labelKey]) {
+        return `https://rocket-league.com/items/decals/${ESPORTS_DECAL_URLS[labelKey]}`;
+      }
+      // Fallback: try slug under common car bodies
+      const decalSlug = getSlug(cleanName);
+      return `TRY_DECALS:${decalSlug}`;
     }
 
     const itemSlug = getSlug(cleanName);
