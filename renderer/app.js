@@ -2932,7 +2932,7 @@ function showSwapTargetModal(item) {
     'AvatarBorders': 'AvatarBorder_Default_SF.upk',
     'Bodies': 'Body_Octane_SF.upk',
     'Decals': 'body_octane_premium_skins_SF.upk',
-    'Boosts': 'Boost_Standard_SF.upk',
+    'Boosts': 'Boost_wispysmoke_SF.upk',
     'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
     'GoalExplosions': 'Explosion_Default_SF.upk',
     'Toppers': 'hat_halo_SF.upk',
@@ -2948,7 +2948,7 @@ function showSwapTargetModal(item) {
     'AvatarBorders': 'Bordo Avatar di Default',
     'Bodies': 'Octane',
     'Decals': 'Octane: Standard Decal',
-    'Boosts': 'Standard Boost',
+    'Boosts': 'Thermal Boost (Termico)',
     'EngineSounds': 'OEM Engine',
     'GoalExplosions': 'Classica',
     'Toppers': 'Halo',
@@ -3030,6 +3030,44 @@ function showSwapTargetModal(item) {
   }
 
   if (modal) modal.style.display = 'flex';
+  updateSwapTargetPreview();
+}
+
+async function updateSwapTargetPreview() {
+  const select = document.getElementById('swap-target-select');
+  const container = document.getElementById('swap-target-preview-container');
+  const imgEl = document.getElementById('swap-target-preview-img');
+  const labelEl = document.getElementById('swap-target-preview-label');
+  
+  if (!select || !container || !imgEl || !labelEl) return;
+  
+  const val = select.value;
+  if (val === 'custom') {
+    container.style.display = 'none';
+    return;
+  }
+  
+  container.style.display = 'flex';
+  const label = select.options[select.selectedIndex]?.text || '';
+  labelEl.textContent = label;
+  imgEl.innerHTML = '📦';
+  
+  if (!activeCatalogItemToSwap) return;
+  
+  try {
+    const cleanLabel = label.split('(')[0].trim();
+    const items = await rc.getCatalog({
+      search: cleanLabel,
+      category: activeCatalogItemToSwap.type,
+      limit: 1
+    });
+    
+    if (items && items.length > 0 && items[0].image) {
+      imgEl.innerHTML = `<img src="${items[0].image}" alt="" style="width:100%; height:100%; object-fit:contain;"/>`;
+    }
+  } catch (err) {
+    console.error('Failed to get target preview image:', err);
+  }
 }
 
 document.getElementById('swap-target-select')?.addEventListener('change', (e) => {
@@ -3037,6 +3075,7 @@ document.getElementById('swap-target-select')?.addEventListener('change', (e) =>
   if (customContainer) {
     customContainer.style.display = e.target.value === 'custom' ? 'block' : 'none';
   }
+  updateSwapTargetPreview();
 });
 
 // Autocomplete ricerca catalogo per swap target
