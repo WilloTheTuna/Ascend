@@ -478,6 +478,21 @@ def main():
             continue
         upk_items.append(item)
         
+    CATEGORY_PRIORITY = {
+        'PlayerBanners': 1,
+        'EngineSounds': 2,
+        'AvatarBorders': 3,
+        'Antennas': 4,
+        'Trails': 5,
+        'Toppers': 6,
+        'Boosts': 7,
+        'GoalExplosions': 8,
+        'Wheels': 9,
+        'Decals': 10,
+        'Bodies': 11
+    }
+    upk_items.sort(key=lambda x: CATEGORY_PRIORITY.get(x.get("category"), 0))
+    
     total_items = len(upk_items)
     
     # ── Phase 1: Local UPK extraction ─────────────────────────────────────────
