@@ -51,9 +51,9 @@ async function main() {
     const releasePayload = {
       tag_name: tagName,
       name: `${tagName} - Early Demo`,
-      body: `Automated release build for Ascend v${version}. Includes performance optimizations and latest feature updates.`,
+      body: `Automated pre-release build for Ascend v${version}. Includes performance optimizations and latest feature updates.`,
       draft: false,
-      prerelease: false
+      prerelease: true
     };
 
     if (getRelRes.ok) {
