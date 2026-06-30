@@ -1008,7 +1008,7 @@ class SwapEngine extends EventEmitter {
         }
 
         processed++;
-        const progress = Math.round((processed / total) * 100);
+        const progress = Math.round((resolved / total) * 100);
         if (onProgress && processed % 5 === 0) {
           onProgress({ phase: 'thumbnails', progress, resolved, total, current: name });
         }
