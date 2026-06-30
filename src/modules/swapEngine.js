@@ -785,23 +785,10 @@ class SwapEngine extends EventEmitter {
         if (this.thumbnailsMap) {
           delete this.thumbnailsMap[""];
           delete this.thumbnailsMap["undefined"];
-          for (const key of Object.keys(CODENAME_MAP)) {
-            const parts = key.split(':');
-            if (parts.length > 1) {
-              const codename = parts[1].toLowerCase();
-              const translated = CODENAME_MAP[key].toLowerCase();
-              if (this.thumbnailsMap[codename] === '') delete this.thumbnailsMap[codename];
-              if (this.thumbnailsMap[translated] === '') delete this.thumbnailsMap[translated];
-            }
-          }
-          // Self-heal cache: delete any generic question marks, wrong engine.png matches, or failed painted items
+          // Self-heal cache: delete any generic question marks or wrong engine.png matches
           let changed = false;
           for (const [k, v] of Object.entries(this.thumbnailsMap)) {
             if (v && (v.includes('bd07f7dd801478026052') || v.includes('engine.png'))) {
-              delete this.thumbnailsMap[k];
-              changed = true;
-            }
-            if (k.endsWith(' t') && v === '') {
               delete this.thumbnailsMap[k];
               changed = true;
             }
