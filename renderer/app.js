@@ -2695,6 +2695,48 @@ document.getElementById('btn-save-settings')?.addEventListener('click', async ()
   toast('Settings saved', 'success');
 });
 
+document.getElementById('btn-force-refresh-items')?.addEventListener('click', async () => {
+  if (!confirm('Are you sure you want to force re-scan all local game files and refresh the items database?')) return;
+  try {
+    toast('Scanning local game files...', 'info');
+    const res = await rc.refreshCatalog();
+    if (res && res.ok) {
+      toast(`Catalog refreshed successfully! Added ${res.addedCount} items.`, 'success');
+      loadCatalog();
+    } else {
+      toast(`Refresh failed: ${res ? res.error : 'Unknown error'}`, 'error');
+    }
+  } catch (err) {
+    toast(`Refresh error: ${err.message}`, 'error');
+  }
+});
+
+document.getElementById('btn-force-download-icons')?.addEventListener('click', async () => {
+  if (!confirm('Are you sure you want to force download/update all item icons from the Rocket League Garage database? This might take a few minutes.')) return;
+  try {
+    toast('Starting download of all icons...', 'info');
+    
+    const bar = document.getElementById('swaps-download-progress-bar');
+    const fill = document.getElementById('swaps-progress-fill');
+    const text = document.getElementById('swaps-progress-text');
+    const pct = document.getElementById('swaps-progress-pct');
+
+    if (bar) bar.style.display = 'flex';
+    if (fill) fill.style.width = '0%';
+    if (text) text.textContent = 'Downloading all icons...';
+    if (pct) pct.textContent = '0%';
+
+    const res = await rc.downloadMissingThumbnails(true);
+    if (res && res.ok) {
+      toast('All icons downloaded successfully! ✅', 'success');
+    } else {
+      toast(`Icon download failed: ${res ? res.error : 'Unknown error'}`, 'error');
+    }
+  } catch (err) {
+    toast(`Icon download error: ${err.message}`, 'error');
+  }
+});
+
 document.getElementById('btn-revert-all-settings')?.addEventListener('click', async () => {
   await rc.revertAll();
   swaps = [];
@@ -2932,7 +2974,7 @@ function showSwapTargetModal(item) {
     'AvatarBorders': 'AvatarBorder_Default_SF.upk',
     'Bodies': 'Body_Octane_SF.upk',
     'Decals': 'body_octane_premium_skins_SF.upk',
-    'Boosts': 'Boost_wispysmoke_SF.upk',
+    'Boosts': 'Boost_Propulsion_SF.upk',
     'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
     'GoalExplosions': 'Explosion_Default_SF.upk',
     'Toppers': 'hat_halo_SF.upk',
@@ -3052,12 +3094,10 @@ async function updateSwapTargetPreview() {
   labelEl.textContent = label;
   imgEl.innerHTML = '📦';
   
-  if (!activeCatalogItemToSwap) return;
-  
   try {
-    const cleanLabel = label.split('(')[0].trim();
+    const cleanSearch = val.replace(/\.upk$/i, '');
     const items = await rc.getCatalog({
-      search: cleanLabel,
+      search: cleanSearch,
       category: activeCatalogItemToSwap.type,
       limit: 1
     });

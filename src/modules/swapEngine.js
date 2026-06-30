@@ -299,7 +299,7 @@ class SwapEngine extends EventEmitter {
 
   // ── Apply a single swap ──────────────────────
   async applySwap(swap) {
-    // Redirect custom boost swaps targeting default Standard/Flamethrower boosts to Thermal (WispySmoke) to prevent crash
+    // Redirect custom boost swaps targeting default Standard/Flamethrower boosts to Thermal (Propulsion) to prevent crash
     const isCustomBoost = (src) => {
       if (!src) return false;
       const isLegacy = src.match(/^Boost_(Standard|Flamethrower)/i);
@@ -308,8 +308,8 @@ class SwapEngine extends EventEmitter {
 
     if (swap.targetFile && (swap.targetFile.toLowerCase() === 'boost_standard_sf.upk' || swap.targetFile.toLowerCase() === 'boost_flamethrower_sf.upk')) {
       if (isCustomBoost(swap.sourceFile)) {
-        this.logger.info(`SwapEngine: custom boost on default target detected. Redirecting swap target to Thermal Boost (Boost_wispysmoke_SF.upk) to prevent crash.`);
-        swap.targetFile = 'Boost_wispysmoke_SF.upk';
+        this.logger.info(`SwapEngine: custom boost on default target detected. Redirecting swap target to Thermal Boost (Boost_Propulsion_SF.upk) to prevent crash.`);
+        swap.targetFile = 'Boost_Propulsion_SF.upk';
         swap.targetLabel = 'Thermal Boost';
       }
     }
@@ -595,7 +595,7 @@ class SwapEngine extends EventEmitter {
       'AvatarBorders': 'AvatarBorder_Default_SF.upk',
       'Bodies': 'Body_Octane_SF.upk',
       'Decals': 'body_octane_premium_skins_SF.upk',
-      'Boosts': 'Boost_Standard_SF.upk',
+      'Boosts': 'Boost_Propulsion_SF.upk',
       'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
       'GoalExplosions': 'Explosion_Default_SF.upk',
       'Toppers': 'hat_halo_SF.upk',
@@ -955,14 +955,14 @@ class SwapEngine extends EventEmitter {
     };
   }
 
-  async downloadMissingThumbnails(onProgress) {
+  async downloadMissingThumbnails(onProgress, force = false) {
     if (!this.thumbnailsMap) this.thumbnailsMap = {};
 
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
       const name = this.getRealItemName(item);
-      return !this.isThumbnailPresent(name, item.category);
+      return force || !this.isThumbnailPresent(name, item.category);
     });
 
     const total = missing.length;
