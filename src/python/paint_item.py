@@ -197,7 +197,7 @@ def main():
                         write_fname(global_val_offset, none_idx)
                         modified = True
                     elif prop.name in ("Constant", "MaxOutput", "MinOutput"):
-                        write_vector(global_val_offset, *target_dist_color)
+                        write_vector(global_val_offset + 8, *target_dist_color)
                         modified = True
                         
             elif class_name == "MaterialInstanceConstant" and "Standard" in obj_name:
@@ -222,12 +222,12 @@ def main():
                                     prop_type = pkg.names[prop_type_idx].name
                                     prop_size = r.read_i32()
                                     r.read_i32() # array_idx
-                                    prop_val_offset = global_val_offset + 4 + r.tell()
+                                    prop_val_offset = global_val_offset + r.tell()
                                     
                                     if prop_type == "StructProperty":
                                         r.read_i32() # struct type idx
                                         r.read_i32() # struct type inst
-                                        floats_offset = global_val_offset + 4 + r.tell()
+                                        floats_offset = global_val_offset + r.tell()
                                         r.read_exact(prop_size)
                                         
                                         if prop_name == "ParameterValue":
@@ -280,12 +280,12 @@ def main():
                                     prop_type = pkg.names[prop_type_idx].name
                                     prop_size = r.read_i32()
                                     r.read_i32()
-                                    prop_val_offset = global_val_offset + 4 + r.tell()
+                                    prop_val_offset = global_val_offset + r.tell()
                                     
                                     if prop_type == "StructProperty":
                                         r.read_i32()
                                         r.read_i32()
-                                        floats_offset = global_val_offset + 4 + r.tell()
+                                        floats_offset = global_val_offset + r.tell()
                                         r.read_exact(prop_size)
                                         
                                         if prop_name == "ParameterValue":
