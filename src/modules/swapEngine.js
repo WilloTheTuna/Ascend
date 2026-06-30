@@ -64,7 +64,34 @@ const CODENAME_MAP = {
   'decals:future stainless buster': 'Miku Stainless Buster',
   'decals:future stainless buster t': 'Miku Stainless Buster',
   'decals:future': 'Miku Rider Dark',
-  'decals:future t': 'Miku Rider Dark'
+  'decals:future t': 'Miku Rider Dark',
+
+  // Esports Decals overrides
+  'decals:alpine': 'Alpine Esports',
+  'decals:elevate': 'Elevate 2024',
+  'decals:evilgeniuses': 'Evil Geniuses',
+  'decals:fazeclan': 'FaZe Clan',
+  'decals:fcbarcelona': 'FC Barcelona',
+  'decals:geng': 'Gen.G',
+  'decals:karminecorp': 'Karmine Corp',
+  'decals:manchestercity': 'Manchester City',
+  'decals:moistesports': 'Moist Esports',
+  'decals:opticgaming': 'OpTic Gaming',
+  'decals:pittsburghknights': 'Pittsburgh Knights',
+  'decals:psg': 'PSG Esports',
+  'decals:renaultvitality': 'Renault Vitality',
+  'decals:shopifyrebellion': 'Shopify Rebellion',
+  'decals:teamfalcons': 'Team Falcons',
+  'decals:twistedminds': 'Twisted Minds',
+  'decals:gentlemates': 'Gentle Mates',
+  'decals:spacestationgaming': 'Spacestation Gaming',
+  'decals:kansascitypioneers': 'Kansas City Pioneers',
+  'decals:misfits': 'Misfits Gaming',
+  'decals:g2': 'G2 Esports',
+  'decals:mibr': 'MIBR',
+  'decals:nip': 'Ninjas in Pyjamas',
+  'decals:oxygen': 'Oxygen Esports',
+  'decals:rixgg': 'Rix.GG'
 };
 
 /**
@@ -951,7 +978,9 @@ class SwapEngine extends EventEmitter {
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
       const name = this.getRealItemName(item);
-      return force || !this.isThumbnailPresent(name, item.category, true);
+      return force
+        ? !this.isThumbnailPresent(name, item.category, false)
+        : !this.isThumbnailPresent(name, item.category, true);
     });
 
     const total = missing.length;
@@ -974,7 +1003,10 @@ class SwapEngine extends EventEmitter {
         const item = queue.shift();
         if (!item) break;
         const name = this.getRealItemName(item);
-        if (!force && this.isThumbnailPresent(name, item.category, true)) {
+        const skipCheck = force 
+          ? this.isThumbnailPresent(name, item.category, false)
+          : this.isThumbnailPresent(name, item.category, true);
+        if (skipCheck) {
           processed++;
           continue;
         }
@@ -1167,11 +1199,16 @@ class SwapEngine extends EventEmitter {
     const catSlug = mapping[category];
     if (!catSlug) return null;
 
-    if (category === 'Decals' && cleanName.includes(':')) {
-      const parts = cleanName.split(':');
-      const bodySlug = getSlug(parts[0].trim());
-      const decalSlug = getSlug(parts[1].trim());
-      return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
+    if (category === 'Decals') {
+      if (cleanName.includes(':')) {
+        const parts = cleanName.split(':');
+        const bodySlug = getSlug(parts[0].trim());
+        const decalSlug = getSlug(parts[1].trim());
+        return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
+      } else {
+        const decalSlug = getSlug(cleanName);
+        return `TRY_DECALS:${decalSlug}`;
+      }
     }
 
     const itemSlug = getSlug(cleanName);
@@ -1179,6 +1216,20 @@ class SwapEngine extends EventEmitter {
   }
 
   async scrapeRlgImage(url) {
+    if (url.startsWith('TRY_DECALS:')) {
+      const decalSlug = url.split(':')[1];
+      const bodies = ['octane', 'fennec', 'dominus'];
+      for (const body of bodies) {
+        const testUrl = `https://rocket-league.com/items/decals/${body}/${decalSlug}`;
+        const img = await this._scrapeSingleUrl(testUrl);
+        if (img) return img;
+      }
+      return null;
+    }
+    return this._scrapeSingleUrl(url);
+  }
+
+  async _scrapeSingleUrl(url) {
     // Known generic placeholder image hashes - treat as "not found"
     const PLACEHOLDER_HASHES = [
       'bd07f7dd801478026052',
@@ -1192,6 +1243,9 @@ class SwapEngine extends EventEmitter {
         },
         timeout: 10000
       });
+      if (res.url && (res.url.endsWith('/items') || res.url.endsWith('/items/'))) {
+        return null;
+      }
       if (res.status === 301 || res.status === 302 || res.status === 404) {
         return null;
       }

@@ -1,6 +1,6 @@
 {
   "name": "ascend",
-  "version": "1.0.60",
+  "version": "1.0.61",
   "description": "Ascend - EAC-Compatible Rocket League Mod Manager",
   "main": "src/main.js",
   "scripts": {
