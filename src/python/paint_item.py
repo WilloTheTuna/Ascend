@@ -197,7 +197,7 @@ def main():
                         write_fname(global_val_offset, none_idx)
                         modified = True
                     elif prop.name in ("Constant", "MaxOutput", "MinOutput"):
-                        write_vector(global_val_offset + 8, *target_dist_color)
+                        write_vector(global_val_offset, *target_dist_color)
                         modified = True
                         
             elif class_name == "MaterialInstanceConstant" and "Standard" in obj_name:
