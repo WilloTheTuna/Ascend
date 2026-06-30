@@ -221,8 +221,11 @@ class UPKVirtualReader:
         encrypted_size = self.total_hdr - self.garbage_size - self.name_offset
         encrypted_size = (encrypted_size + 15) & ~15
         encrypted_data = self.raw_data[self.name_offset : self.name_offset + encrypted_size]
-        cipher = AES.new(self.AES_KEY, AES.MODE_ECB)
-        self.decrypted_data = cipher.decrypt(encrypted_data)
+        if self.magic == 0x9E2A83C1 and self.raw_data[0:4] == b"\xC1\x83\x2A\x9E":
+            self.decrypted_data = encrypted_data
+        else:
+            cipher = AES.new(self.AES_KEY, AES.MODE_ECB)
+            self.decrypted_data = cipher.decrypt(encrypted_data)
 
     def parse_names(self):
         pos = 0
