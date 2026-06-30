@@ -898,30 +898,30 @@ class SwapEngine extends EventEmitter {
     }
   }
 
-  isThumbnailPresent(name, category) {
+  isThumbnailPresent(name, category, allowFailed = false) {
     if (!this.thumbnailsMap) return false;
     const key = name.toLowerCase();
     const val = this.thumbnailsMap[key];
-    if (val !== undefined && val !== '') return true;
+    if (val !== undefined && (allowFailed || val !== '')) return true;
 
     // Fallback for painted variants: "Fennec T" -> try "Fennec"
     if (key.endsWith(' t')) {
       const baseKey = key.slice(0, -2).trim();
       const baseVal = this.thumbnailsMap[baseKey];
-      if (baseVal !== undefined && baseVal !== '') return true;
+      if (baseVal !== undefined && (allowFailed || baseVal !== '')) return true;
     }
 
     // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
     if (category === 'Decals' && name.includes(':')) {
       const decalName = name.split(':')[1].trim().toLowerCase();
       const decalVal = this.thumbnailsMap[decalName];
-      if (decalVal !== undefined && decalVal !== '') {
+      if (decalVal !== undefined && (allowFailed || decalVal !== '')) {
         return true;
       }
       // Fallback to car body image: "Fennec: Distortion" -> try "Fennec"
       const bodyName = name.split(':')[0].trim().toLowerCase();
       const bodyVal = this.thumbnailsMap[bodyName];
-      if (bodyVal !== undefined && bodyVal !== '') {
+      if (bodyVal !== undefined && (allowFailed || bodyVal !== '')) {
         return true;
       }
     }
@@ -938,10 +938,12 @@ class SwapEngine extends EventEmitter {
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
       const name = this.getRealItemName(item);
-      if (this.isThumbnailPresent(name, item.category)) {
+      if (this.isThumbnailPresent(name, item.category, false)) {
         downloadedCount++;
       } else {
-        missing.push(item);
+        if (!this.isThumbnailPresent(name, item.category, true)) {
+          missing.push(item);
+        }
       }
     }
 
@@ -962,7 +964,7 @@ class SwapEngine extends EventEmitter {
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
       const name = this.getRealItemName(item);
-      return force || !this.isThumbnailPresent(name, item.category);
+      return force || !this.isThumbnailPresent(name, item.category, true);
     });
 
     const total = missing.length;
@@ -985,7 +987,7 @@ class SwapEngine extends EventEmitter {
         const item = queue.shift();
         if (!item) break;
         const name = this.getRealItemName(item);
-        if (this.isThumbnailPresent(name, item.category)) {
+        if (!force && this.isThumbnailPresent(name, item.category, true)) {
           processed++;
           continue;
         }
