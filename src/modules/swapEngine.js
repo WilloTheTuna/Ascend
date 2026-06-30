@@ -299,6 +299,33 @@ class SwapEngine extends EventEmitter {
 
   // ── Apply a single swap ──────────────────────
   async applySwap(swap) {
+    // Redirect legacy colored boost swaps (e.g. Standard Purple -> Standard) to paint-only mode to prevent crash
+    const getLegacyBoostColor = (src, tgt) => {
+      if (!src || !tgt) return null;
+      const srcMatch = src.match(/^Boost_(Standard|Flamethrower)(?:_([a-zA-Z]+))?_SF\.upk$/i);
+      const tgtMatch = tgt.match(/^Boost_(Standard|Flamethrower)_SF\.upk$/i);
+      if (srcMatch && tgtMatch && srcMatch[1].toLowerCase() === tgtMatch[1].toLowerCase()) {
+        const color = srcMatch[2] ? srcMatch[2].toLowerCase() : null;
+        if (color) return color;
+      }
+      return null;
+    };
+
+    const legacyColor = getLegacyBoostColor(swap.sourceFile, swap.targetFile);
+    if (legacyColor) {
+      this.logger.info(`SwapEngine: legacy boost detected. Redirecting to paint-only mode. Color: ${legacyColor}`);
+      const colorMap = {
+        'blue': 'cobalt',
+        'green': 'forest_green',
+        'yellow': 'saffron',
+        'pink': 'pink',
+        'purple': 'purple',
+        'red': 'crimson'
+      };
+      swap.paintColor = colorMap[legacyColor] || legacyColor;
+      swap.sourceFile = swap.targetFile;
+    }
+
     const { targetFile, sourceFile, sourceLabel, targetLabel } = swap;
     this.logger.info(`Swap requested: ${sourceLabel} -> ${targetLabel}`);
 
@@ -394,6 +421,15 @@ class SwapEngine extends EventEmitter {
           fs.copyFileSync(backupPath, targetPath);
         } else {
           this.logger.info(`SwapEngine: paint-only mode — no backup yet, painting current file`);
+        }
+        // Also restore texture companion if it exists
+        if (targetTexFilename) {
+          const backupTexPath = path.join(this.backupDir, targetTexFilename).replace(/\\/g, '/');
+          const targetTexPath = path.join(this.cookedDir, targetTexFilename);
+          if (fs.existsSync(backupTexPath)) {
+            this.logger.info(`SwapEngine: paint-only mode — restoring texture companion original from backup`);
+            fs.copyFileSync(backupTexPath, targetTexPath);
+          }
         }
       }
 
