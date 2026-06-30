@@ -299,6 +299,21 @@ class SwapEngine extends EventEmitter {
 
   // ── Apply a single swap ──────────────────────
   async applySwap(swap) {
+    // Redirect custom boost swaps targeting default Standard/Flamethrower boosts to Thermal (WispySmoke) to prevent crash
+    const isCustomBoost = (src) => {
+      if (!src) return false;
+      const isLegacy = src.match(/^Boost_(Standard|Flamethrower)/i);
+      return !isLegacy;
+    };
+
+    if (swap.targetFile && (swap.targetFile.toLowerCase() === 'boost_standard_sf.upk' || swap.targetFile.toLowerCase() === 'boost_flamethrower_sf.upk')) {
+      if (isCustomBoost(swap.sourceFile)) {
+        this.logger.info(`SwapEngine: custom boost on default target detected. Redirecting swap target to Thermal Boost (Boost_wispysmoke_SF.upk) to prevent crash.`);
+        swap.targetFile = 'Boost_wispysmoke_SF.upk';
+        swap.targetLabel = 'Thermal Boost';
+      }
+    }
+
     // Redirect legacy colored boost swaps (e.g. Standard Purple -> Standard) to paint-only mode to prevent crash
     const getLegacyBoostColor = (src, tgt) => {
       if (!src || !tgt) return null;
