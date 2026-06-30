@@ -452,9 +452,17 @@ def main():
     items = catalog.get("items", [])
     print(f"Catalog has {len(items)} items.")
     
-    # Clean output thumbnails map (discard old scraped HTTP results entirely)
+    # Load existing thumbnails map to skip already resolved items
     tmap = {}
-    print("Resetting thumbnails_map.json...")
+    if os.path.exists(MAP_FILE):
+        try:
+            with open(MAP_FILE, "r", encoding="utf-8") as f:
+                tmap = json.load(f)
+            print(f"Loaded existing thumbnails_map.json with {len(tmap)} entries.")
+        except Exception:
+            print("Resetting thumbnails_map.json...")
+    else:
+        print("Resetting thumbnails_map.json...")
     
     # Load item_names.json to match keys exactly
     item_names = {}
