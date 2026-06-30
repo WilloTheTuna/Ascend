@@ -913,17 +913,23 @@ class SwapEngine extends EventEmitter {
       const buffer = Buffer.concat(chunks);
       const rawData = JSON.parse(buffer.toString('utf8'));
 
-      const map = {};
+      // Merge CDN data into existing map — never overwrite existing valid (non-empty) entries
+      const existingMap = this.thumbnailsMap || {};
+      const mergedMap = { ...existingMap };
       if (Array.isArray(rawData)) {
         for (const item of rawData) {
           if (item.name && item.src) {
-            map[item.name.toLowerCase()] = item.src;
+            const key = item.name.toLowerCase();
+            // Only insert if we don't already have a valid URL for this key
+            if (!mergedMap[key] || mergedMap[key] === '') {
+              mergedMap[key] = item.src;
+            }
           }
         }
       }
 
-      fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
-      this.thumbnailsMap = map;
+      fs.writeFileSync(mapFile, JSON.stringify(mergedMap, null, 2));
+      this.thumbnailsMap = mergedMap;
       this.logger.info(`SwapEngine: Catalog refresh complete, updated thumbnails map (${Object.keys(this.thumbnailsMap).length} items)`);
       if (onProgress) onProgress({ phase: 'complete', progress: 100, count: Object.keys(this.thumbnailsMap).length, addedCount });
       return { ok: true, count: Object.keys(this.thumbnailsMap).length, addedCount };
