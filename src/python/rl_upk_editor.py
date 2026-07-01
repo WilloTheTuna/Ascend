@@ -803,7 +803,8 @@ def build_reencrypted_package(original_encrypted_path: Path, modified_decrypted_
     copy_len = min(len(original_plain), encrypted_plain_len)
     header_plain[:copy_len] = original_plain[:copy_len]
 
-    new_total_header_size = modified_summary.name_offset + encrypted_plain_len + meta.garbage_size
+    garbage_size = 0
+    new_total_header_size = modified_summary.name_offset + encrypted_plain_len + garbage_size
     current_compressed_offset = new_total_header_size
     for i, chunk in enumerate(original_chunks):
         start = chunk.uncompressed_offset + chunk_shift
@@ -854,6 +855,7 @@ def build_reencrypted_package(original_encrypted_path: Path, modified_decrypted_
     _patch_generation_counts(prefix, summary_offsets, modified_summary.export_count, modified_summary.name_count)
     with original_encrypted_path.open("rb") as src:
         meta_offsets = _find_file_compression_metadata_offsets(src)
+    patch_i32_le(prefix, meta_offsets["garbage_size_offset"], 0) # Force garbage_size to 0
     patch_i32_le(prefix, meta_offsets["compressed_chunks_offset_offset"], new_chunk_table_offset)
     if rebuilt_chunks:
         patch_i32_le(prefix, meta_offsets["last_block_size_offset"], rebuilt_chunks[-1].uncompressed_size)
@@ -861,12 +863,7 @@ def build_reencrypted_package(original_encrypted_path: Path, modified_decrypted_
     output = bytearray()
     output += prefix
     output += encrypted_header
-    gap_start = modified_summary.name_offset + len(encrypted_header)
-    original_gap_start = summary.name_offset + len(original_encrypted_data)
-    original_gap_end = original_chunks[0].compressed_offset
-    gap_bytes = original_bytes[original_gap_start:original_gap_end]
-    if len(gap_bytes) != meta.garbage_size:
-        gap_bytes = original_bytes[original_gap_end - meta.garbage_size:original_gap_end]
+    gap_bytes = b""
     output += gap_bytes
     for payload in rebuilt_chunk_payloads:
         output += payload

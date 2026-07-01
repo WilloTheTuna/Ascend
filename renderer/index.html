@@ -460,14 +460,6 @@
           </div>
         </div>
         <div class="settings-section">
-          <h3>Catalog & Asset Manager</h3>
-          <div style="display: flex; gap: 12px; margin-bottom: 12px;">
-            <button class="btn btn-sm" id="btn-force-refresh-items" style="flex: 1; padding: 10px 16px;">Force Refresh Items</button>
-            <button class="btn btn-sm" id="btn-force-download-icons" style="flex: 1; padding: 10px 16px;">Force Download Icons</button>
-          </div>
-          <p class="hint" style="margin-top: 6px;">Force a complete scan of local game files or re-download all items and icons from the online database.</p>
-        </div>
-        <div class="settings-section">
           <h3>Danger Zone</h3>
           <button class="btn btn-danger" id="btn-revert-all-settings">Revert All Swaps</button>
           <p class="hint">Restores all original game files from backups</p>
@@ -912,14 +904,6 @@
     <div style="margin-bottom: 24px;">
       <label for="swap-target-select" style="font-size: 11px; color: var(--text-sub); display: block; margin-bottom: 6px;">Replace this standard in-game item:</label>
       <select id="swap-target-select" class="select" style="width: 100%; font-size: 13px; padding: 10px;"></select>
-      
-      <!-- Target Preview Area -->
-      <div id="swap-target-preview-container" style="display: flex; align-items: center; gap: 10px; margin-top: 10px; padding: 8px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.03); border-radius: var(--r-sm);">
-        <div id="swap-target-preview-img" style="width: 32px; height: 32px; border-radius: var(--r-xs); background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.03); overflow:hidden;">
-          📦
-        </div>
-        <div id="swap-target-preview-label" style="font-size: 12px; color: var(--text-sub);">Default</div>
-      </div>
       
       <!-- Option to search custom target from catalog -->
       <div id="swap-target-custom-file-container" style="display:none; margin-top: 12px; position: relative;">

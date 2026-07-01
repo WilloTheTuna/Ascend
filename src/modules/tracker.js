@@ -853,6 +853,30 @@ class TrackerModule extends EventEmitter {
           }
         } else {
           this.logger.warn(`[roster] Tracker.gg fallback returned error or no segments for ${playerName}: status=${res.status} error=${res.error || 'no segments'}`);
+          // On 404, retry with the raw platform account ID (parts[1]) if different from display name
+          const accountId = parts[1];
+          if (res.status === 404 && accountId && accountId !== queryIdentifier && !accountId.includes('*') && accountId !== '0') {
+            this.logger.info(`[roster] Retrying ${playerName} with account ID: ${accountId}`);
+            const retryUrl = `https://api.tracker.gg/api/v2/rocket-league/standard/profile/${trackerPlatform}/${encodeURIComponent(accountId)}?t=${Date.now()}`;
+            try {
+              const retryRes = await this._fetchUrlViaBrowser(retryUrl);
+              if (retryRes.status === 200 && retryRes.data?.data?.segments) {
+                const skills = this._parseTrackerGgSegmentsToSkills(retryRes.data.data.segments);
+                this._rosterCache[playerId] = { skills, timestamp: Date.now() };
+                if (this._rosterMap[playerId]) {
+                  this._rosterMap[playerId].allSkills = skills;
+                  this._updateRosterPlayerFromSkills(playerId);
+                  this.logger.info(`[roster] ${playerName} fetched via account ID retry`);
+                  this.emit('roster-update', this._buildRoster());
+                }
+                this._rosterFetching.delete(playerId);
+                this._checkAndScheduleMemoryCleanup();
+                return;
+              }
+            } catch (retryErr) {
+              this.logger.warn(`[roster] Account ID retry failed for ${playerName}: ${retryErr.message}`);
+            }
+          }
           this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
           if (this._rosterMap[playerId]) {
             this._rosterMap[playerId].allSkills = {};
@@ -861,6 +885,7 @@ class TrackerModule extends EventEmitter {
             this.emit('roster-update', this._buildRoster());
           }
         }
+
       } catch (err) {
         this.logger.error(`[roster] Tracker.gg fallback failed for ${playerName}: ${err.message}`);
         this._rosterCache[playerId] = { skills: {}, timestamp: Date.now() };
@@ -967,10 +992,30 @@ class TrackerModule extends EventEmitter {
       if (players.length > 1) {
         const locals = players.filter(p => p.isLocal);
         const opponents = players.filter(p => !p.isLocal);
-        
-        // Imposta i locali nel team 0 (Blue) e gli avversari nel team 1 (Orange)
         locals.forEach(p => { p.team = 0; });
         opponents.forEach(p => { p.team = 1; });
+      }
+    } else {
+      // Stats API may have missed assigning a team for some players (joined late, 404, etc).
+      // If all non-locals ended up on team=1 in a balanced match, rebalance by priNum.
+      const allPlayers = Object.values(this._rosterMap);
+      const localPlayer = allPlayers.find(p => p.isLocal);
+      if (localPlayer) {
+        const localTeam = localPlayer.team ?? 0;
+        const nonLocals = allPlayers.filter(p => !p.isLocal);
+        const allOnTeam1 = nonLocals.length > 0 && nonLocals.every(p => p.team === 1);
+        const totalCount = allPlayers.length;
+        if (allOnTeam1 && (totalCount === 4 || totalCount === 6)) {
+          const teamSize = totalCount / 2;
+          const localsOnTeam = allPlayers.filter(p => p.team === localTeam).length;
+          const neededTeammates = teamSize - localsOnTeam;
+          if (neededTeammates > 0) {
+            const sorted = nonLocals.slice().sort((a, b) => (a.priNum ?? 999) - (b.priNum ?? 999));
+            sorted.slice(0, neededTeammates).forEach(p => { p.team = localTeam; });
+            sorted.slice(neededTeammates).forEach(p => { p.team = 1 - localTeam; });
+            this.logger.info(`[roster] Team rebalance: assigned ${neededTeammates} teammate(s) to team ${localTeam} by priNum`);
+          }
+        }
       }
     }
 

@@ -9,29 +9,14 @@ async function main() {
     const version = pkg.version;
     const tagName = `v${version}`;
     
-    // 1. Get token
+    // 1. Get token from git credential fill
     let token = '';
-    
     try {
-      const remoteUrl = execSync('git remote get-url origin', { encoding: 'utf8' }).trim();
-      const urlMatch = remoteUrl.match(/https?:\/\/(.*)@github\.com/);
-      if (urlMatch) token = urlMatch[1].trim();
+      const credOutput = execSync('echo url=https://github.com/WilloTheTuna/Ascend.git | git credential fill', { encoding: 'utf8' });
+      const match = credOutput.match(/password=(.*)/);
+      if (match) token = match[1].trim();
     } catch (e) {
-      // Ignore
-    }
-    
-    if (!token && process.env.GITHUB_TOKEN && !process.env.GITHUB_TOKEN.includes('dummy')) {
-      token = process.env.GITHUB_TOKEN;
-    }
-
-    if (!token) {
-      try {
-        const credOutput = execSync('echo url=https://github.com/WilloTheTuna/Ascend.git | git credential fill', { encoding: 'utf8', timeout: 5000 });
-        const match = credOutput.match(/password=(.*)/);
-        if (match) token = match[1].trim();
-      } catch (e) {
-        console.error('[auto-release] Could not fetch git credentials:', e.message);
-      }
+      console.error('[auto-release] Could not fetch git credentials:', e.message);
     }
 
     if (!token) {

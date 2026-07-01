@@ -67,55 +67,6 @@ const CODENAME_MAP = {
   'decals:future t': 'Miku Rider Dark'
 };
 
-// Direct RLG body/slug map for Esports Decals (verified against rocket-league.com)
-// Key: catalog label lowercased. Value: 'body/slug' path on RLG
-const ESPORTS_DECAL_URLS = {
-  'alpine':              'octane/alpine-esports',
-  'cloud9':              'octane/cloud9',
-  'complexity':          'octane/complexity',
-  'dignitas':            'octane/dignitas',
-  'elevate':             'fennec/elevate-2024',
-  'evilgeniuses':        'octane/evil-geniuses',
-  'fazeclan':            'fennec/faze-clan',
-  'furia':               'octane/furia',
-  'g2':                  'octane/g2-esports',
-  'ghostgaming':         'octane/ghost-gaming',
-  'giants':              'octane/giants',
-  'groundzerogaming':    'octane/ground-zero-gaming',
-  'karminecorp':         'fennec/karmine-corp',
-  'mousesports':         'octane/mousesports',
-  'nrg':                 'octane/nrg-esports',
-  'psg':                 'octane/psg-esports',
-  'pwr':                 'octane/pwr',
-  'rebellion':           'octane/rebellion',
-  'renegades':           'octane/renegades',
-  'rogue':               'octane/rogue',
-  'skgaming':            'octane/sk-gaming',
-  'semperesports':       'octane/semper-esports',
-  'spacestationgaming':  'octane/spacestation-gaming',
-  'tsm':                 'octane/tsm',
-  'teamqueso':           'octane/team-queso',
-  'teamsingularity':     'octane/team-singularity',
-  'torrent':             'octane/torrent',
-  'trueneutral':         'octane/true-neutral',
-  'version1':            'octane/version1',
-  'xset':                'octane/xset',
-  'renaultvitality':     'octane/team-vitality',
-  'resolve':             'octane/resolve-2024',
-  'splyce':              'octane/splyce',
-  'endpoint':            'octane/endpoint',
-  'eunited':             'octane/eunited',
-  'guild':               'octane/guild-esports',
-  'oxygen':              'octane/oxygen-esports',
-  'pittsburghknights':   'octane/pittsburgh-knights',
-  'reciprocity':         'octane/reciprocity',
-  'solary':              'octane/solary',
-  'susquehannasoniqs':   'octane/susquehanna-soniqs',
-  'teambds':             'octane/team-bds',
-  'teamenvy':            'octane/team-envy',
-  'teamliquid':          'octane/team-liquid',
-};
-
 /**
  * SwapEngine — Reads .upk files from CookedPCConsole, backs them up,
  * and swaps them on disk before the game reads them.
@@ -348,21 +299,6 @@ class SwapEngine extends EventEmitter {
 
   // ── Apply a single swap ──────────────────────
   async applySwap(swap) {
-    // Redirect custom boost swaps targeting default Standard/Flamethrower boosts to Thermal (Propulsion) to prevent crash
-    const isCustomBoost = (src) => {
-      if (!src) return false;
-      const isLegacy = src.match(/^Boost_(Standard|Flamethrower)/i);
-      return !isLegacy;
-    };
-
-    if (swap.targetFile && (swap.targetFile.toLowerCase() === 'boost_standard_sf.upk' || swap.targetFile.toLowerCase() === 'boost_flamethrower_sf.upk')) {
-      if (isCustomBoost(swap.sourceFile)) {
-        this.logger.info(`SwapEngine: custom boost on default target detected. Redirecting swap target to Thermal Boost (Boost_Propulsion_SF.upk) to prevent crash.`);
-        swap.targetFile = 'Boost_Propulsion_SF.upk';
-        swap.targetLabel = 'Thermal Boost';
-      }
-    }
-
     // Redirect legacy colored boost swaps (e.g. Standard Purple -> Standard) to paint-only mode to prevent crash
     const getLegacyBoostColor = (src, tgt) => {
       if (!src || !tgt) return null;
@@ -644,7 +580,7 @@ class SwapEngine extends EventEmitter {
       'AvatarBorders': 'AvatarBorder_Default_SF.upk',
       'Bodies': 'Body_Octane_SF.upk',
       'Decals': 'body_octane_premium_skins_SF.upk',
-      'Boosts': 'Boost_Propulsion_SF.upk',
+      'Boosts': 'Boost_Standard_SF.upk',
       'EngineSounds': 'EngineAudio_Car01_OE_SF.upk',
       'GoalExplosions': 'Explosion_Default_SF.upk',
       'Toppers': 'hat_halo_SF.upk',
@@ -834,10 +770,23 @@ class SwapEngine extends EventEmitter {
         if (this.thumbnailsMap) {
           delete this.thumbnailsMap[""];
           delete this.thumbnailsMap["undefined"];
-          // Self-heal cache: delete any generic question marks or wrong engine.png matches
+          for (const key of Object.keys(CODENAME_MAP)) {
+            const parts = key.split(':');
+            if (parts.length > 1) {
+              const codename = parts[1].toLowerCase();
+              const translated = CODENAME_MAP[key].toLowerCase();
+              if (this.thumbnailsMap[codename] === '') delete this.thumbnailsMap[codename];
+              if (this.thumbnailsMap[translated] === '') delete this.thumbnailsMap[translated];
+            }
+          }
+          // Self-heal cache: delete any generic question marks, wrong engine.png matches, or failed painted items
           let changed = false;
           for (const [k, v] of Object.entries(this.thumbnailsMap)) {
             if (v && (v.includes('bd07f7dd801478026052') || v.includes('engine.png'))) {
+              delete this.thumbnailsMap[k];
+              changed = true;
+            }
+            if (k.endsWith(' t') && v === '') {
               delete this.thumbnailsMap[k];
               changed = true;
             }
@@ -913,23 +862,17 @@ class SwapEngine extends EventEmitter {
       const buffer = Buffer.concat(chunks);
       const rawData = JSON.parse(buffer.toString('utf8'));
 
-      // Merge CDN data into existing map — never overwrite existing valid (non-empty) entries
-      const existingMap = this.thumbnailsMap || {};
-      const mergedMap = { ...existingMap };
+      const map = {};
       if (Array.isArray(rawData)) {
         for (const item of rawData) {
           if (item.name && item.src) {
-            const key = item.name.toLowerCase();
-            // Only insert if we don't already have a valid URL for this key
-            if (!mergedMap[key] || mergedMap[key] === '') {
-              mergedMap[key] = item.src;
-            }
+            map[item.name.toLowerCase()] = item.src;
           }
         }
       }
 
-      fs.writeFileSync(mapFile, JSON.stringify(mergedMap, null, 2));
-      this.thumbnailsMap = mergedMap;
+      fs.writeFileSync(mapFile, JSON.stringify(map, null, 2));
+      this.thumbnailsMap = map;
       this.logger.info(`SwapEngine: Catalog refresh complete, updated thumbnails map (${Object.keys(this.thumbnailsMap).length} items)`);
       if (onProgress) onProgress({ phase: 'complete', progress: 100, count: Object.keys(this.thumbnailsMap).length, addedCount });
       return { ok: true, count: Object.keys(this.thumbnailsMap).length, addedCount };
@@ -940,30 +883,30 @@ class SwapEngine extends EventEmitter {
     }
   }
 
-  isThumbnailPresent(name, category, allowFailed = false) {
+  isThumbnailPresent(name, category) {
     if (!this.thumbnailsMap) return false;
     const key = name.toLowerCase();
     const val = this.thumbnailsMap[key];
-    if (val !== undefined && (allowFailed || val !== '')) return true;
+    if (val !== undefined && val !== '') return true;
 
     // Fallback for painted variants: "Fennec T" -> try "Fennec"
     if (key.endsWith(' t')) {
       const baseKey = key.slice(0, -2).trim();
       const baseVal = this.thumbnailsMap[baseKey];
-      if (baseVal !== undefined && (allowFailed || baseVal !== '')) return true;
+      if (baseVal !== undefined && baseVal !== '') return true;
     }
 
     // Split fallback for decals (e.g. "Octane: Distortion" -> use "Distortion" icon)
     if (category === 'Decals' && name.includes(':')) {
       const decalName = name.split(':')[1].trim().toLowerCase();
       const decalVal = this.thumbnailsMap[decalName];
-      if (decalVal !== undefined && (allowFailed || decalVal !== '')) {
+      if (decalVal !== undefined && decalVal !== '') {
         return true;
       }
       // Fallback to car body image: "Fennec: Distortion" -> try "Fennec"
       const bodyName = name.split(':')[0].trim().toLowerCase();
       const bodyVal = this.thumbnailsMap[bodyName];
-      if (bodyVal !== undefined && (allowFailed || bodyVal !== '')) {
+      if (bodyVal !== undefined && bodyVal !== '') {
         return true;
       }
     }
@@ -980,12 +923,10 @@ class SwapEngine extends EventEmitter {
     for (const item of this.catalog) {
       if (SKIP_CATEGORIES.has(item.category)) continue;
       const name = this.getRealItemName(item);
-      if (this.isThumbnailPresent(name, item.category, false)) {
+      if (this.isThumbnailPresent(name, item.category)) {
         downloadedCount++;
       } else {
-        if (!this.isThumbnailPresent(name, item.category, true)) {
-          missing.push(item);
-        }
+        missing.push(item);
       }
     }
 
@@ -999,16 +940,14 @@ class SwapEngine extends EventEmitter {
     };
   }
 
-  async downloadMissingThumbnails(onProgress, force = false) {
+  async downloadMissingThumbnails(onProgress) {
     if (!this.thumbnailsMap) this.thumbnailsMap = {};
 
     const SKIP_CATEGORIES = new Set(['Anthems']);
     const missing = this.catalog.filter(item => {
       if (SKIP_CATEGORIES.has(item.category)) return false;
       const name = this.getRealItemName(item);
-      return force
-        ? !this.isThumbnailPresent(name, item.category, false)
-        : !this.isThumbnailPresent(name, item.category, true);
+      return !this.isThumbnailPresent(name, item.category);
     });
 
     const total = missing.length;
@@ -1031,10 +970,7 @@ class SwapEngine extends EventEmitter {
         const item = queue.shift();
         if (!item) break;
         const name = this.getRealItemName(item);
-        const skipCheck = force 
-          ? this.isThumbnailPresent(name, item.category, false)
-          : this.isThumbnailPresent(name, item.category, true);
-        if (skipCheck) {
+        if (this.isThumbnailPresent(name, item.category)) {
           processed++;
           continue;
         }
@@ -1057,7 +993,7 @@ class SwapEngine extends EventEmitter {
         }
 
         processed++;
-        const progress = Math.round((resolved / total) * 100);
+        const progress = Math.round((processed / total) * 100);
         if (onProgress && processed % 5 === 0) {
           onProgress({ phase: 'thumbnails', progress, resolved, total, current: name });
         }
@@ -1227,21 +1163,11 @@ class SwapEngine extends EventEmitter {
     const catSlug = mapping[category];
     if (!catSlug) return null;
 
-    if (category === 'Decals') {
-      if (cleanName.includes(':')) {
-        const parts = cleanName.split(':');
-        const bodySlug = getSlug(parts[0].trim());
-        const decalSlug = getSlug(parts[1].trim());
-        return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
-      }
-      // Check direct esports URL map first (verified RLG paths)
-      const labelKey = getSlug(cleanName).replace(/-/g, '');
-      if (ESPORTS_DECAL_URLS[labelKey]) {
-        return `https://rocket-league.com/items/decals/${ESPORTS_DECAL_URLS[labelKey]}`;
-      }
-      // Fallback: try slug under common car bodies
-      const decalSlug = getSlug(cleanName);
-      return `TRY_DECALS:${decalSlug}`;
+    if (category === 'Decals' && cleanName.includes(':')) {
+      const parts = cleanName.split(':');
+      const bodySlug = getSlug(parts[0].trim());
+      const decalSlug = getSlug(parts[1].trim());
+      return `https://rocket-league.com/items/decals/${bodySlug}/${decalSlug}`;
     }
 
     const itemSlug = getSlug(cleanName);
@@ -1249,20 +1175,6 @@ class SwapEngine extends EventEmitter {
   }
 
   async scrapeRlgImage(url) {
-    if (url.startsWith('TRY_DECALS:')) {
-      const decalSlug = url.split(':')[1];
-      const bodies = ['octane', 'fennec', 'dominus'];
-      for (const body of bodies) {
-        const testUrl = `https://rocket-league.com/items/decals/${body}/${decalSlug}`;
-        const img = await this._scrapeSingleUrl(testUrl);
-        if (img) return img;
-      }
-      return null;
-    }
-    return this._scrapeSingleUrl(url);
-  }
-
-  async _scrapeSingleUrl(url) {
     // Known generic placeholder image hashes - treat as "not found"
     const PLACEHOLDER_HASHES = [
       'bd07f7dd801478026052',
@@ -1276,9 +1188,6 @@ class SwapEngine extends EventEmitter {
         },
         timeout: 10000
       });
-      if (res.url && (res.url.endsWith('/items') || res.url.endsWith('/items/'))) {
-        return null;
-      }
       if (res.status === 301 || res.status === 302 || res.status === 404) {
         return null;
       }

@@ -131,7 +131,7 @@ def main():
                     print(f"Mapping dynamic ProductAsset export: '{s_name}' -> '{t_name}' (class: {class_name})")
                     rename_map[s_name.lower()] = t_name
 
-        
+
     modified = False
     
     # We must loop and rename one by one. Since rename_name_entry returns a fresh package

@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('rc', {
   refreshCatalog:         () => ipcRenderer.invoke('catalog-refresh'),
   checkNewLocalItems:     () => ipcRenderer.invoke('catalog-check-new'),
   getMissingThumbnailsInfo: () => ipcRenderer.invoke('catalog-get-missing-info'),
-  downloadMissingThumbnails: (force) => ipcRenderer.invoke('catalog-download-missing', force),
+  downloadMissingThumbnails: () => ipcRenderer.invoke('catalog-download-missing'),
 
   // Catalog — backward compatibility fallback
   readCatalogJSON:       () => '[]',
